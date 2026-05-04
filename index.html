@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- アプリとして起動させる設定 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- ステータスバー（時計とか）の色を調整 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ホーム画面でのアプリ名 -->
+<meta name="apple-mobile-web-app-title" content="マイアプリ">
+<!-- アイコンの設定（別途icon.pngを用意して読み込むと完璧！） -->
+<link rel="apple-touch-icon" href="icon.png">
+  <title>ひっさん★マスター</title>
+  <style>
+    /* 1. 全体のデザイン（色とかたち） */
+    :root {
+      --color-bg: #FFFDF0; /* 優しいクリーム色 */
+      --color-main: #FF8BA7; /* かわいいピンク */
+      --color-sub: #A0E4FF; /* 空色 */
+      --color-text: #5F4B32; /* 柔らかい茶色 */
+    }
+
+    body {
+      background-color: var(--color-bg);
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      color: var(--color-text);
+      margin: 0;
+      padding: 0;
+    }
+
+    #app {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 14px 12px;
+    }
+
+    /* タイトル部分 */
+    .app-header {
+      text-align: center;
+      padding: 20px 0 10px;
+    }
+    .app-title {
+      font-size: 28px;
+      color: var(--color-main);
+      text-shadow: 2px 2px 0px #fff;
+      margin: 0;
+    }
+    .app-subtitle {
+      font-size: 14px;
+      color: #9E8F7D;
+      margin-top: 4px;
+    }
+    .app-title-icon {
+      font-size: 40px;
+    }
+
+    /* 入力カード */
+    .card {
+      background: white;
+      border: 4px solid #FCE4EC;
+      border-radius: 28px;
+      padding: 24px 16px;
+      margin-bottom: 15px;
+      box-shadow: 0 8px 0 #F8BBD0;
+    }
+
+    /* 横一列の入力レイアウト */
+    .formula-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .ni {
+      flex: 1;
+      min-width: 0;
+      height: 64px;
+      font-size: 26px;
+      font-weight: bold;
+      border: 3px solid #E1F5FE;
+      border-radius: 18px;
+      background: #FFFFFF;
+      text-align: center;
+      color: var(--color-text);
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.05);
+    }
+
+    .op-select-wrapper {
+      position: relative;
+      width: 75px;
+    }
+
+    .op-select {
+      width: 100%;
+      height: 64px;
+      font-size: 28px;
+      font-weight: bold;
+      border: none;
+      border-radius: 18px;
+      background: var(--color-sub);
+      color: #0277BD;
+      text-align: center;
+      text-align-last: center;
+      appearance: none;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #81D4FA;
+    }
+
+    /* ボタン */
+    .cb {
+      width: 100%;
+      height: 64px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      background: var(--color-main);
+      color: white;
+      box-shadow: 0 6px 0 #E91E63;
+      cursor: pointer;
+    }
+    .cb:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #E91E63;
+    }
+
+    .em {
+      min-height: 24px;
+      font-size: 14px;
+      color: #E91E63;
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    /* 筆算結果エリア */
+    .hp {
+      background: white;
+      border: 4px solid #E1F5FE;
+      border-radius: 24px;
+      padding: 25px 15px;
+      box-shadow: 0 8px 0 #B3E5FC;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100px;
+    }
+
+    /* 筆算の数字など */
+    .hdr { font-size: 16px; margin-bottom: 18px; font-family: monospace; }
+    .ans { color: var(--color-main) !important; font-weight: bold; font-size: 22px; }
+    .gc { display: grid; gap: 3px; align-items: center; justify-items: center; }
+    .c { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 500; font-family: monospace; }
+    .cv { color: var(--color-text); }
+    .co { color: #78909C; font-size: 22px; }
+    .ca { color: var(--color-main); font-size: 26px; font-weight: bold; }
+    .cp { color: #90A4AE; font-size: 22px; }
+    .cr { color: #BA7517; font-size: 22px; }
+    .sc { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; font-family: monospace; }
+    .scr { color: #BA7517; }
+    .sbw { color: #E91E63; }
+    .lb { font-size: 11px; text-align: center; width: 52px; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="app-header">
+    <div class="app-title-icon">✏️✨</div>
+    <h1 class="app-title">ひっさん★マスター</h1>
+    <p class="app-subtitle">とちゅうの「くり上がり」もわかるよ！</p>
+  </div>
+
+  <div class="card">
+    <div class="formula-row">
+      <input class="ni" id="n1" type="tel" inputmode="numeric" placeholder="0">
+      <div class="op-select-wrapper">
+        <select class="op-select" id="op-select" onchange="sop_simple(this)">
+          <option value="+">＋</option>
+          <option value="-">－</option>
+          <option value="*">×</option>
+          <option value="/">÷</option>
+        </select>
+      </div>
+      <input class="ni" id="n2" type="tel" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="em" id="em"></div>
+    <button class="cb" onclick="calc()">＝　ひっさんを表示</button>
+  </div>
+
+  <div class="hp" id="hp">
+    <div style="color:#9E8F7D; text-align:center; padding:20px;">
+      すうじをいれて「ひっさんを表示」をおしてね！
+    </div>
+  </div>
+</div>
+
+<script>
+let gop = '+';
+const CS = 46;
+
+function sop_simple(sel) {
+  gop = sel.value;
+  document.getElementById('em').textContent = '';
+}
+
+function calc() {
+  const em = document.getElementById('em');
+  em.textContent = '';
+  const v1 = document.getElementById('n1').value.trim();
+  const v2 = document.getElementById('n2').value.trim();
+  if (!v1 || !v2) { em.textContent = 'すうじをいれてね'; return; }
+  const a = parseInt(v1), b = parseInt(v2);
+  if (isNaN(a) || isNaN(b)) { em.textContent = 'ただしいすうじをいれてね'; return; }
+  
+  if (gop === '/' && b === 0) { em.textContent = '0ではわれないよ'; return; }
+  if (gop === '-' && a < b) { em.textContent = 'ひきざんができないよ'; return; }
+
+  if (gop === '+') rAdd(a, b);
+  else if (gop === '-') rSub(a, b);
+  else if (gop === '*') rMul(a, b);
+  else rDiv(a, b);
+}
+
+// 便利な共通関数
+function pad(n, w) { return (' '.repeat(w) + n).slice(-w); }
+function pad0(n, w) { return ('0'.repeat(w) + n).slice(-w); }
+function ge() { return `<div class="c"></div>`; }
+function gv(d, cls = 'cv') { return `<div class="c ${cls}">${d}</div>`; }
+function gvC(d, carry, cls = 'cv') {
+  if (!carry) return `<div class="c ${cls}">${d}</div>`;
+  return `<div class="c ${cls}" style="position:relative;">${d}<span style="position:absolute;top:1px;right:2px;font-size:11px;font-weight:bold;color:#BA7517;line-height:1;">${carry}</span></div>`;
+}
+function gsc(d, cls) { return d ? `<div class="sc ${cls}">${d}</div>` : `<div class="sc"></div>`; }
+function setHP(hdrHTML, gridHTML) {
+  document.getElementById('hp').innerHTML = `<div class="hdr">${hdrHTML}</div><div style="overflow-x:auto;display:flex;justify-content:center;width:100%;">${gridHTML}</div>`;
+}
+
+// 足し算
+function rAdd(n1, n2) {
+  const res = n1 + n2;
+  let W = Math.max(String(n1).length, String(n2).length, String(res).length);
+  const d1 = pad0(n1, W).split('').map(Number), d2 = pad0(n2, W).split('').map(Number);
+  const s1 = pad(n1, W), s2 = pad(n2, W), sr = pad(res, W);
+  const ci = new Array(W).fill(0);
+  for (let k = W - 2; k >= 0; k--) ci[k] = Math.floor((d1[k + 1] + d2[k + 1] + ci[k + 1]) / 10);
+  let g = `<div class="gc" style="grid-template-columns:52px repeat(${W},${CS}px);">`;
+  g += `<div class="lb" style="color:#BA7517;">くり<br>上がり</div>`;
+  for (let k = 0; k < W; k++) g += k < W - 1 && ci[k] > 0 ? gsc(ci[k], 'scr') : `<div class="sc"></div>`;
+  g += ge(); for (let k = 0; k < W; k++) g += s1[k] === ' ' ? ge() : gv(s1[k]);
+  g += gv('＋', 'co'); for (let k = 0; k < W; k++) g += s2[k] === ' ' ? ge() : gv(s2[k]);
+  g += `<div style="grid-column:1/${W + 2};height:3px;background:#5F4B32;width:100%;margin:2px 0;"></div>`;
+  g += ge(); for (let k = 0; k < W; k++) g += sr[k] === ' ' ? ge() : gv(sr[k], 'ca');
+  g += '</div>';
+  setHP(`${n1} ＋ ${n2} ＝ <span class="ans">${res}</span>`, g);
+}
+
+// 引き算
+function rSub(n1, n2) {
+  const res = n1 - n2;
+  const W = Math.max(String(n1).length, String(n2).length);
+  const eff = pad0(n1, W).split('').map(Number), d2 = pad0(n2, W).split('').map(Number);
+  const s1 = pad(n1, W), s2 = pad(n2, W), sr = pad(res, W);
+  const borrow = new Array(W).fill(0);
+  const e2 = [...eff];
+  for (let k = W - 1; k >= 0; k--) { if (e2[k] < d2[k]) { borrow[k] = 1; e2[k] += 10; if (k > 0) e2[k - 1]--; } }
+  const lend = new Array(W).fill(0);
+  for (let k = 1; k < W; k++) if (borrow[k]) lend[k - 1] = 1;
+  let g = `<div class="gc" style="grid-template-columns:52px repeat(${W},${CS}px);">`;
+  g += `<div class="lb" style="color:#E91E63;">くり<br>下がり</div>`;
+  for (let k = 0; k < W; k++) g += lend[k] ? gsc(1, 'sbw') : `<div class="sc"></div>`;
+  g += ge(); for (let k = 0; k < W; k++) g += s1[k] === ' ' ? ge() : gv(s1[k]);
+  g += gv('－', 'co'); for (let k = 0; k < W; k++) g += s2[k] === ' ' ? ge() : gv(s2[k]);
+  g += `<div style="grid-column:1/${W + 2};height:3px;background:#5F4B32;width:100%;margin:2px 0;"></div>`;
+  g += ge(); for (let k = 0; k < W; k++) g += sr[k] === ' ' ? ge() : gv(sr[k], 'ca');
+  g += '</div>';
+  setHP(`${n1} － ${n2} ＝ <span class="ans">${res}</span>`, g);
+}
+
+// かけ算（レイアウト調整版）
+function rMul(n1, n2) {
+  const res = n1 * n2;
+  const D2 = String(n2).length;
+  let W = Math.max(String(res).length, String(n1).length, String(n2).length);
+  const sn1 = pad(n1, W), sn2 = pad(n2, W), sr = pad(res, W);
+  let g = `<div class="gc" style="grid-template-columns:52px repeat(${W},${CS}px) 20px 1fr; align-items: center;">`;
+  g += ge(); for (let k = 0; k < W; k++) g += sn1[k] === ' ' ? ge() : gv(sn1[k]);
+  g += ge(); g += ge();
+  g += gv('×', 'co'); for (let k = 0; k < W; k++) g += sn2[k] === ' ' ? ge() : gv(sn2[k]);
+  g += ge(); g += ge();
+  g += `<div style="grid-column: 2 / ${W + 2}; height:3px; background:#5F4B32; margin:4px 0;"></div><div style="grid-column: span 2;"></div>`;
+
+  const s2d = String(n2).split('').map(Number);
+  const colors = ['#185FA5', '#2E7D32', '#BA7517', '#6A1B9A'];
+  for (let i = D2 - 1; i >= 0; i--) {
+    const d = s2d[i], shift = D2 - 1 - i, pp = n1 * d;
+    const stepNum = D2 - i, color = colors[(stepNum - 1) % colors.length];
+    const carries = ppCarries(n1, d), ppW = W - shift, ppPad = pad(pp, ppW);
+    g += `<div class="lb" style="color:${color}; font-weight:bold;">手順${stepNum}</div>`;
+    for (let k = 0; k < ppW; k++) {
+      if (ppPad[k] === ' ') g += ge();
+      else {
+        const pfr = ppW - 1 - k, carry = pfr > 0 && pfr < carries.length ? carries[pfr] : 0;
+        g += gvC(ppPad[k], carry > 0 ? carry : null, 'cp');
+      }
+    }
+    for (let k = 0; k < shift; k++) g += ge();
+    g += ge();
+    g += `<div style="text-align:left; color:${color}; font-family:monospace; font-size:15px; border-left:2px solid #EEE; padding-left:8px;">${n1}×${d * Math.pow(10, shift)}=${pp * Math.pow(10, shift)}</div>`;
+  }
+  if (D2 > 1) {
+    g += `<div style="grid-column: 2 / ${W + 2}; height:3px; background:#5F4B32; margin:4px 0;"></div><div style="grid-column: span 2;"></div>`;
+  }
+  g += `<div class="lb" style="color:var(--color-main); font-weight:bold;">答え</div>`;
+  for (let k = 0; k < W; k++) g += sr[k] === ' ' ? ge() : gv(sr[k], 'ca');
+  g += ge(); g += `<div style="text-align:left; color:var(--color-main); font-weight:bold;">合計: ${res}</div>`;
+  g += '</div>';
+  setHP(`${n1} × ${n2} ＝ <span class="ans">${res}</span>`, g);
+}
+
+function ppCarries(n1, d) {
+  const digits = String(n1).split('').reverse().map(Number);
+  const c = new Array(digits.length).fill(0);
+  let carry = 0;
+  for (let k = 0; k < digits.length; k++) {
+    const prod = digits[k] * d + carry;
+    carry = Math.floor(prod / 10);
+    if (k + 1 < digits.length) c[k + 1] = carry;
+  }
+  return c;
+}
+
+// 割り算（基本レイアウト）
+function rDiv(dvd, div) {
+  const dvdS = String(dvd), N = dvdS.length;
+  const quot = Math.floor(dvd / div), remF = dvd % div;
+  let qStart = -1, tmp = 0;
+  for (let i = 0; i < N; i++) { tmp = tmp * 10 + parseInt(dvdS[i]); if (tmp >= div && qStart < 0) qStart = i; }
+  const steps = []; let cur = 0;
+  for (let i = 0; i < N; i++) {
+    cur = cur * 10 + parseInt(dvdS[i]);
+    if (i >= qStart) { const q = Math.floor(cur / div), p = q * div, r = cur - p; steps.push({ q, p, r, ep: i }); cur = r; }
+  }
+  const COLS = N + 2, DS = 2;
+  let g = `<div class="gc" style="grid-template-columns:repeat(${COLS},${CS}px);">`;
+  const qRow = Array(COLS).fill(ge()); for (let s of steps) qRow[DS + s.ep] = gv(s.q, 'ca');
+  g += qRow.join('');
+  const dRow = [ge(), `<div class="c cv" style="border-right:3px solid #5F4B32; justify-content:flex-end; padding-right:4px;">${div}</div>`];
+  for (let i = 0; i < N; i++) dRow.push(`<div class="c cv" style="border-top:3px solid #5F4B32;">${dvdS[i]}</div>`);
+  g += dRow.join('');
+  for (let s of steps) {
+    const pS = String(s.p), pL = pS.length, pRow = Array(COLS).fill(ge());
+    for (let d = 0; d < pL; d++) pRow[DS + s.ep - pL + 1 + d] = gv(pS[d], 'cp');
+    g += pRow.join('');
+    g += `<div style="grid-column:${DS + s.ep - pL + 2}/${DS + s.ep + 2}; height:2px; background:#999; margin:1px 0;"></div>`;
+    const rS = String(s.r), rRow = Array(COLS).fill(ge());
+    for (let d = 0; d < rS.length; d++) rRow[DS + s.ep - rS.length + 1 + d] = gv(rS[d], 'cr');
+    g += rRow.join('');
+  }
+  g += '</div>';
+  const ansStr = remF > 0 ? `${quot} あまり ${remF}` : String(quot);
+  setHP(`${dvd} ÷ ${div} ＝ <span class="ans">${ansStr}</span>`, g);
+}
+</script>
+</body>
+</html>
