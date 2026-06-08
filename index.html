@@ -202,8 +202,10 @@
       border-radius: 14px; margin-bottom: 8px;
       text-align: left; width: 100%;
       box-sizing: border-box;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(255,255,255,0.78) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .step-label {
       min-width: 50px; text-align: center;
@@ -397,8 +399,8 @@
       `</div>`;
   }
   function makeStepCard(step, col, color, bodyHTML) {
-    return `<div class="step-card" style="background:${color}12;border-left:5px solid ${color};">` +
-      `<div class="step-label" style="color:${color};">手順${step}<small>${col}のくらい</small></div>` +
+    return `<div class="step-card" style="border-left:5px solid ${color};">` +
+      `<div class="step-label" style="color:${color};">てじゅん${step}<small>${col}のくらい</small></div>` +
       `<div class="step-body">${bodyHTML}</div>` +
       `</div>`;
   }
@@ -585,7 +587,7 @@
       const ppW     = W - shift;
       const ppPad   = pad(pp, ppW);
  
-      g += `<div class="lb" style="color:${color}; font-weight:bold;">手順${stepNum}</div>`;
+      g += `<div class="lb" style="color:${color}; font-weight:bold;">てじゅん${stepNum}</div>`;
       for (let k = 0; k < ppW; k++) {
         if (ppPad[k] === ' ') {
           g += ge();
@@ -613,15 +615,15 @@
     if (D2 > 1) {
       g += `<div style="grid-column: 2 / ${W + 2}; height:3px; background:#5F4B32; margin:4px 0;"></div>` +
            `<div style="grid-column: span 2;"></div>`;
-      stepsHTML += makeStepCard(D2 + 1, "合計", "var(--color-main)",
-        `筆算（ひっさん）で かきだした かずを すべて たすと、<br>答えは <b>${res}</b> になります！`);
+      stepsHTML += makeStepCard(D2 + 1, "ごうけい", "var(--color-main)",
+        `ひっさんで かきだした かずを すべて たすと、<br>こたえは <b>${res}</b> になります！`);
     }
  
     // 答え行
-    g += `<div class="lb" style="color:var(--color-main); font-weight:bold;">答え</div>`;
+    g += `<div class="lb" style="color:var(--color-main); font-weight:bold;">こたえ</div>`;
     for (let k = 0; k < W; k++) g += sr[k] === ' ' ? ge() : gv(sr[k], 'ca');
     g += ge();
-    g += `<div style="text-align:left; color:var(--color-main); font-weight:bold;">合計: ${res}</div>`;
+    g += `<div style="text-align:left; color:var(--color-main); font-weight:bold;">ごうけい: ${res}</div>`;
     g += '</div>';
  
     setHPFull(`${n1} × ${n2} ＝ <span class="ans">${res}</span>`, g, stepsHTML, '#FCE4EC');
@@ -737,8 +739,8 @@
     }
  
     if (remF > 0) {
-      stepsHTML += makeStepCard(steps.length + 1, "最後", "var(--color-main)",
-        `さいごにのこった <b>${remF}</b> が「あまり」になります！`);
+      stepsHTML += makeStepCard(steps.length + 1, "さいご", "var(--color-main)",
+        `さいごに のこった <b>${remF}</b> が「あまり」に なります！`);
     }
  
     g += '</div>';
