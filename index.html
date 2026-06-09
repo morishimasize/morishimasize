@@ -50,7 +50,7 @@
     #app {
       max-width: 800px;
       margin: 0 auto;
-      padding-top: 30vh;
+      padding-top: 24vh;
     }
     body.answer-mode #app {
       padding-top: 0;
@@ -73,17 +73,17 @@
     .formula-bar { display: flex; align-items: center; gap: 10px; }
  
  .num-box {
-      width: 160px; height: 80px;
+      width: 190px; height: 100px;
       background: rgba(255,255,255,0.96);
       border: 4px solid #FFB3C6;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border-radius: 22px;
-      font-size: 48px; font-weight: bold;
+      border-radius: 26px;
+      font-size: 58px; font-weight: bold;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: 0.2s;
       color: var(--color-text);
-      box-shadow: 0 5px 0 #FFB3C6;
+      box-shadow: 0 6px 0 #FFB3C6;
     }
     .num-box.active {
       border-color: #FBC02D;
@@ -204,16 +204,16 @@
     }
  
     /* ── 筆算グリッド共通 ── */
-    .gc { display: grid; gap: 3px; align-items: center; justify-items: center; }
-    .c  { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 500; font-family: monospace; }
+    .gc { display: grid; gap: 12px; align-items: center; justify-items: center; }
+    .c  { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 500; font-family: monospace; }
     .cv { color: var(--color-text); }
     .co { color: #78909C; font-size: 28px; }
     .ca { color: var(--color-main); font-size: 32px; font-weight: bold; }
     .cp { color: #90A4AE; font-size: 28px; }
     .cr { color: #BA7517; font-size: 28px; }
-    .sc { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; font-family: monospace; }
+    .sc { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; font-family: monospace; }
     .scr { color: #BA7517; }
-    .lb { font-size: 13px; text-align: center; width: 58px; display: flex; align-items: center; justify-content: center; }
+    .lb { font-size: 13px; text-align: center; width: 66px; display: flex; align-items: center; justify-content: center; }
  
     .hdr { font-size: 22px; margin-bottom: 18px; font-family: monospace; font-weight: bold; }
     .ans { color: var(--color-main) !important; font-weight: bold; font-size: 28px; }
@@ -297,7 +297,7 @@
 <script>
   let gop = '+';
   let n1str = "", n2str = "", target = "n1";
-  const CS = 46;
+  const CS = 58;
   const PLACE_NAMES = ['一', '十', '百', '千', '万'];
   const STEP_COLORS = ['#185FA5', '#2E7D32', '#BA7517', '#6A1B9A', '#C62828'];
  
@@ -384,7 +384,7 @@
   function colClr(k, W) { return STEP_COLORS[(W - 1 - k) % STEP_COLORS.length]; }
  
   function gvBox(d, cls, color) {
-    return `<div class="c ${cls}" style="background:${color}18;border:2px solid ${color}45;border-radius:8px;">${d}</div>`;
+    return `<div class="c ${cls}" style="background:${color}18;border:2px solid ${color}45;border-radius:10px;">${d}</div>`;
   }
   function gscBox(d, cls, color) {
     return `<div class="sc ${cls}" style="background:${color}25;border-radius:4px;">${d}</div>`;
@@ -393,14 +393,14 @@
     const above = (reduced >= 0)
       ? `<span style="position:absolute;top:1px;right:3px;font-size:13px;font-weight:bold;color:#E91E63;line-height:1;">${reduced}</span>`
       : '';
-    return `<div class="c cv" style="position:relative;background:${color}18;border:2px solid ${color}45;border-radius:8px;">` +
+    return `<div class="c cv" style="position:relative;background:${color}18;border:2px solid ${color}45;border-radius:10px;">` +
       above +
       `<span style="color:#bbb;text-decoration:line-through;text-decoration-color:#E91E63;text-decoration-thickness:2px;">${orig}</span>` +
       `</div>`;
   }
   function gvPP(d, carry, color) {
     return `<div class="c" style="position:relative;color:${color};font-size:22px;font-weight:600;` +
-      `background:${color}18;border:2px solid ${color}45;border-radius:8px;">${d}` +
+      `background:${color}18;border:2px solid ${color}45;border-radius:10px;">${d}` +
       (carry ? `<span style="position:absolute;top:1px;right:2px;font-size:11px;font-weight:bold;color:#BA7517;line-height:1;">${carry}</span>` : '') +
       `</div>`;
   }
@@ -587,14 +587,13 @@
         g += ge();
       } else {
         const cc = colClr(k, W);
-        g += `<div class="c cv" style="background:${cc}18;border:2px solid ${cc}45;border-radius:8px;font-weight:bold;color:${cc};">${sn2[k]}</div>`;
+        g += `<div class="c cv" style="background:${cc}18;border:2px solid ${cc}45;border-radius:10px;font-weight:bold;color:${cc};">${sn2[k]}</div>`;
       }
     }
     g += ge(); g += ge();
  
-    // 上横線
-    g += `<div style="grid-column: 2 / ${W + 2}; height:3px; background:#5F4B32; margin:4px 0;"></div>` +
-         `<div style="grid-column: span 2;"></div>`;
+    // 上横線（全幅：ラベル列〜右端）
+    g += `<div style="grid-column: 1 / ${W + 4}; height:3px; background:#5F4B32; margin:4px 0;"></div>`;
  
     let stepsHTML = '';
     const s2d = String(n2).split('').map(Number);
@@ -636,8 +635,7 @@
  
     // 下横線（2桁以上のかけ算のみ）
     if (D2 > 1) {
-      g += `<div style="grid-column: 2 / ${W + 2}; height:3px; background:#5F4B32; margin:4px 0;"></div>` +
-           `<div style="grid-column: span 2;"></div>`;
+      g += `<div style="grid-column: 1 / ${W + 4}; height:3px; background:#5F4B32; margin:4px 0;"></div>`;
       stepsHTML += makeStepCard(D2 + 1, "ごうけい", "var(--color-main)",
         `ひっさんで かきだした かずを すべて たすと、<br>こたえは <b>${res}</b> になります！`);
     }
@@ -691,38 +689,45 @@
       }
     }
  
-    const COLS = N + 2;
-    const DS = 2;
+    // グリッド列: [ラベル55px][割る数auto][被除数N桁×CSpx]
+    const COLS = N + 2; // ラベル1 + 割る数1 + 被除数N
+    const DS = 2; // 被除数の開始列インデックス（0始まり）
     const vLine = "border-left: 1px dashed rgba(244, 67, 54, 0.15);";
-    let g = `<div class="gc" style="grid-template-columns: 55px 50px repeat(${N},${CS}px); align-items: center;">`;
- 
-    // 商（答え）行
+    let g = `<div class="gc" style="grid-template-columns: 55px auto repeat(${N},${CS}px); align-items: center;">`;
+
+    // ── 行1：商（答え） ──
+    // 列1(ラベル)・列2(割る数)は空、列3～N+2に商を表示
     g += ge(); g += ge();
     for (let i = 0; i < N; i++) {
       const s = steps.find(st => st.ep === i);
       const color = colClr(i, N);
       if (s) {
-        g += `<div class="c ca" style="${vLine} background:${color}12; border:2px solid ${color}45; border-radius:8px;">${s.q}</div>`;
+        g += `<div class="c ca" style="background:${color}12; border:2px solid ${color}45; border-radius:10px;">${s.q}</div>`;
       } else {
-        g += `<div class="c" style="${vLine}"></div>`;
+        g += ge();
       }
     }
- 
-    // 割られる数とL字線
+
+    // ── 行2：割る数 ＋ ）＋ 横線 ＋ 被除数 ──
+    // 列1: 空
     g += ge();
-    g += `<div class="c cv" style="border-right:3px solid #5F4B32; justify-content:flex-end; padding-right:8px; font-weight:bold;">${div}</div>`;
+    // 列2: 割る数（右に縦線のみ → 「）」の縦棒）
+    g += `<div class="c cv" style="border-right:4px solid #5F4B32; justify-content:flex-end; padding-right:6px; font-weight:bold;">${div}</div>`;
+    // 列3～N+2: 被除数（上に横線 → 「―――」）
     for (let i = 0; i < N; i++) {
       const color = colClr(i, N);
-      g += `<div class="c cv" style="${vLine} border-top:3px solid #5F4B32; background:${color}05;">${dvdS[i]}</div>`;
+      g += `<div class="c cv" style="border-top:4px solid #5F4B32; background:${color}05; font-weight:bold;">${dvdS[i]}</div>`;
     }
- 
+
     let stepsHTML = '';
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
       const color = colClr(s.ep, N);
       const place = PLACE_NAMES[N - 1 - s.ep] || `位`;
- 
+
       const pS = String(s.p), pL = pS.length;
+
+      // ── かける行 ──
       g += `<div class="lb" style="color:${color}; opacity:0.5;">かける</div>`;
       g += ge();
       const pRow = Array(N).fill("");
@@ -731,12 +736,17 @@
         pRow[colIdx] = `<div class="c" style="${vLine} color:${color}; opacity:0.6;">${pS[d]}</div>`;
       }
       for (let k = 0; k < N; k++) g += pRow[k] || `<div class="c" style="${vLine}"></div>`;
- 
+
+      // ── 横線行 ──
+      // lineStart/End は列インデックス（1始まり）
+      // 列1=ラベル, 列2=割る数, 列3～=被除数
+      const lineColStart = 3 + s.ep - pL + 1; // 被除数列の開始
+      const lineColEnd   = 3 + s.ep + 1;       // 被除数列の終了
       g += ge(); g += ge();
-      const lineStart = DS + s.ep - pL + 2, lineEnd = DS + s.ep + 2;
-      g += `<div style="grid-column:${lineStart}/${lineEnd}; height:2px; background:${color}80; margin:1px 0;"></div>`;
-      for (let k = lineEnd; k <= COLS; k++) g += ge();
- 
+      g += `<div style="grid-column:${lineColStart}/${lineColEnd}; height:3px; background:${color}90; border-radius:2px; margin:1px 0;"></div>`;
+      for (let k = lineColEnd; k < COLS + 1; k++) g += ge();
+
+      // ── ひく行 ──
       g += `<div class="lb" style="color:${color}; font-weight:bold;">ひく</div>`;
       g += ge();
       const rRow = Array(N).fill("");
@@ -751,7 +761,7 @@
         rRow[s.ep + 1] = `<div class="c" style="${vLine} color:${nextColor}; font-weight:bold; text-shadow: 0 0 5px ${nextColor}40;">${nextDigit}</div>`;
       }
       for (let k = 0; k < N; k++) g += rRow[k] || `<div class="c" style="${vLine}"></div>`;
- 
+
       let body = `<b style="color:${color};">① たてる</b>： ${s.valBefore} ÷ ${div} ＝ <b>${s.q}</b> を、${place}にかきます。<br>` +
                  `<b style="color:${color};">② かける</b>： ${div} × ${s.q} ＝ <b>${s.p}</b><br>` +
                  `<b style="color:${color};">③ ひく　</b>： ${s.valBefore} － ${s.p} ＝ <b>${s.r}</b>`;
@@ -760,17 +770,17 @@
       }
       stepsHTML += makeStepCard(i + 1, place, color, body);
     }
- 
+
     if (remF > 0) {
       stepsHTML += makeStepCard(steps.length + 1, "さいご", "var(--color-main)",
         `さいごに のこった <b>${remF}</b> が「あまり」に なります！`);
     }
- 
+
     g += '</div>';
     const ansStr = remF > 0
       ? `${quot} <span style="font-size:16px; color:#9E8F7D; margin:0 4px;">あまり</span> ${remF}`
       : String(quot);
- 
+
     setHPFull(`${dvd} ÷ ${div} ＝ <span class="ans">${ansStr}</span>`, g, stepsHTML, '#E1F5FE');
   }
 </script>
