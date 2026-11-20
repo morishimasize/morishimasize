@@ -142,7 +142,7 @@ function lessonBoardHTML(model,snapshot,overview){
   const x=columns.map((_,i)=>columns.slice(0,i).reduce((a,b)=>a+b,0)+12*i);
   const width=x[x.length-1]+columns[columns.length-1];
   const maxRow=Math.max(...Object.values(snapshot.cells).map(c=>c.row));
-  const height=(maxRow+1)*pitch-12;
+  const height=Math.max((maxRow+1)*pitch-12,...Object.values(snapshot.lines).map(line=>line.row*pitch+8));
   let html=`<div class="lesson-board" style="width:${width}px;height:${height}px" role="img" aria-label="${lessonEscape(model.equation)} の ひっさん${overview?'、できあがり':`、てじゅん${lessonIndex+1}`}" >`;
   // 罫線と数字は独立させ、角丸が割り算の記号に影響しないようにする。
   if(model.op==='/'){
