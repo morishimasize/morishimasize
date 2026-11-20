@@ -10,6 +10,8 @@
 
 .tabs button{min-height:52px}.place{font-size:17px}.controls{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 20px);z-index:10}.controls button{min-height:58px}.progress span{width:13px;height:13px;border:2px solid #cbd9c2;border-radius:50%;background:white}.progress span.past{background:#b9d8a9}.progress span.current{background:#2e86b7;border-color:#2e86b7}.extras button{min-height:50px;padding:12px 18px;font-size:17px}.note{font-size:16px}.explain{font-size:20px;line-height:1.8}
 @media(max-width:740px){.drawing svg{max-width:260px}.lesson{padding:14px}.explain{font-size:19px}.tabs{gap:6px}.tabs button{font-size:14px;min-width:70px}.counter{font-size:16px}.controls button{font-size:20px}}
+
+@media(max-width:740px){.top{margin-bottom:10px}.tabs{margin-bottom:12px}.paper{padding-top:18px;padding-bottom:18px}.section-title,.legend{display:none}.drawing svg{max-width:260px}.progress{margin-top:12px}}
 </style>
 </head>
 <body>
@@ -63,8 +65,8 @@ function shape(){
  if(op==='sub')return {digits:[digit('5',190,130,1,-1),digit('2',254,130,1,-1),digit('−',112,198,1,-1),digit('2',190,198,1,-1),digit('8',254,198,1,-1),digit('4',190,67,2,2,'small'),digit('12',254,67,2,2,'small'),digit('4',254,288,3,3),digit('2',190,288,4,4)],lines:[[147,220,282,220,1],[176,115,204,138,2],[240,115,268,138,2]],guides:[158,222,286],focus:{1:[254,130],3:[254,67],4:[190,67]}};
  return {digits:[digit('2',190,78,1,-1),digit('3',254,78,1,-1),digit('×',74,136,1,-1),digit('1',190,136,1,-1),digit('4',254,136,1,-1),digit('1',190,194,1,1,'small',1),digit('2',254,211,1,1),digit('9',190,211,2,2),digit('3',190,268,3,3),digit('2',126,268,4,4),digit('2',254,346,5,5),digit('2',190,346,6,6),digit('1',126,302,6,6,'small',6),digit('3',126,346,7,7)],lines:[[100,157,282,157,1],[100,288,282,288,5]],guides:[94,158,222,286],focus:{1:[254,78],2:[190,78],3:[190,136],4:[190,78],5:[254,211],6:[190,211],7:[126,268]}};
 }
-function drawing(){const s=shape(),at=all?99:step+1;let out='<svg viewBox="0 0 360 390" role="img" aria-label="'+samples[op].eq+' の ひっさん、'+(all?'ぜんぶ':`てじゅん${at}`)+'">';
- for(const x of s.guides)out+=`<line class="guide" x1="${x}" x2="${x}" y1="30" y2="368"/>`;
+function drawing(){const s=shape(),at=all?99:step+1;const heights={div:[165,205,265,265,265,320,390],add:[225,315,315,315],sub:[225,225,315,315],mul:[235,235,285,285,370,370,390]};const height=all?390:heights[op][step];let out='<svg viewBox="0 0 360 '+height+'" role="img" aria-label="'+samples[op].eq+' の ひっさん、'+(all?'ぜんぶ':`てじゅん${at}`)+'">';
+ for(const x of s.guides)out+=`<line class="guide" x1="${x}" x2="${x}" y1="30" y2="${height-12}"/>`;
  if(!all&&s.focus[at]){const [x,y]=s.focus[at];out+=`<rect class="highlight" x="${x-27}" y="${y-42}" width="54" height="54" rx="12"/>`;}
  out+=s.base||'';
  for(const [x1,y1,x2,y2,from]of s.lines)if(at>=from)out+=`<line class="stroke ${!all&&at===from?'fresh-line':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
