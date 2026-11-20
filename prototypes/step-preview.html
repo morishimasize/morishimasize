@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ひっさんノート｜手順を送る試作</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:20px 14px 100px;background:#eff8eb url('../forest-notebook.png') center/cover fixed;color:#603f2c;font-family:'Hiragino Maru Gothic ProN','Hiragino Kaku Gothic ProN',Meiryo,sans-serif}button{font:inherit;cursor:pointer;touch-action:manipulation}button:focus-visible{outline:4px solid #2784b4;outline-offset:3px}.shell{max-width:1060px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.demo{font-size:14px;font-weight:bold;color:#55744f}.equation{margin:0;background:#fce2eb;border:2px solid white;border-radius:30px;padding:10px 22px;font-weight:bold;font-size:clamp(20px,3vw,28px)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tabs button{flex:1;min-width:70px;padding:11px 12px;border-radius:18px;border:2px solid #e4dcd5;background:#fff;color:#795a48;font-weight:bold;font-size:17px}.tabs button[aria-pressed=true]{background:#dff1fc;border-color:#71badd;color:#21658b}.paper{background-color:#fffefc;background-image:linear-gradient(#dfedf366 1px,transparent 1px),linear-gradient(90deg,#dfedf366 1px,transparent 1px);background-size:24px 24px;border:2px solid #dde6d8;border-radius:28px;box-shadow:0 7px #d8e5cf;position:relative;padding:26px 28px 28px 40px}.paper:before{content:'';position:absolute;left:9px;top:35px;bottom:30px;width:16px;background:radial-gradient(circle,#d7e3cc 0 6px,#b9c9af 7px,transparent 8px) 0 0/16px 46px}.paper:after{content:'';position:absolute;top:-8px;left:24px;width:78px;height:24px;transform:rotate(-13deg);background:radial-gradient(white 1.5px,transparent 2px) 0 0/11px 11px,#f6b5c8dd}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:center}.drawing{min-width:0}.section-title{text-align:center;font-size:22px;margin:0 0 4px}.drawing svg{display:block;width:100%;max-width:390px;margin:auto;height:auto}.drawing text{font-family:inherit;text-anchor:middle;fill:#603f2c;font-weight:600}.drawing .digit{font-size:43px}.drawing .small{font-size:23px}.drawing .fresh{fill:#e87520;font-weight:900}.drawing .used{fill:#4f975d}.stroke{stroke:#624b32;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}.fresh-line{stroke:#e87520}.guide{stroke:#b9dcec;stroke-width:1.5;stroke-dasharray:5 7}.highlight{fill:#fff0cf;stroke:#f6c36f;stroke-width:1.5}.lesson{border:2px solid #b8dcee;border-radius:24px;background:#e7f3fc;padding:22px;min-height:235px}.lesson-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}.badge{display:flex;align-items:center;justify-content:center;border-radius:50%;background:#2e86b7;color:white;min-width:42px;height:42px;font-size:24px;font-weight:bold}.lesson h2{margin:0;font-size:26px;color:#236d98}.place{font-size:15px;font-weight:bold;color:#54768b;margin-top:4px}.math{background:#ffffffdc;border-radius:16px;padding:14px 10px;text-align:center;font-size:clamp(22px,3vw,30px);font-weight:bold;line-height:1.6;min-height:68px}.math strong{color:#ce681d}.explain{font-size:19px;line-height:1.9;margin:15px 0 0;min-height:72px}.legend{text-align:center;font-size:14px;color:#8c612e;margin:6px 0 0}.legend span{display:inline-block;width:10px;height:10px;border-radius:50%;background:#e87520;margin-right:5px}.progress{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:22px 0 0}.progress button{width:30px;height:30px;padding:0;border:2px solid #d7e0cf;border-radius:50%;background:#fff;color:#6b795f;font-size:14px;font-weight:bold}.progress button.past{background:#e5f0df}.progress button.current{background:#2e86b7;border-color:#2e86b7;color:#fff}.controls{position:sticky;bottom:12px;margin:20px auto 0;max-width:700px;border:2px solid white;border-radius:24px;background:#fffcf5f5;box-shadow:0 5px 20px #45653520;padding:12px;display:grid;grid-template-columns:1fr auto 1.3fr;gap:12px;align-items:center}.controls button{border:0;border-radius:17px;padding:14px 12px;font-size:21px;font-weight:bold;min-height:54px}.prev{background:#dff1fc;color:#32627d}.next{background:#ee7999;color:white;box-shadow:0 4px #d4557c}.controls button:disabled{opacity:.4;cursor:default;box-shadow:none}.counter{font-size:17px;font-weight:bold;white-space:nowrap}.extras{display:flex;gap:14px;justify-content:center;margin:18px 0}.extras button{border:0;background:#fff9;border-radius:20px;padding:10px 16px;color:#556f4a;font-size:16px;min-height:44px}.note{font-size:14px;text-align:center;line-height:1.8;color:#5c7553;margin:16px auto 0;max-width:650px}.all-mode .lesson{background:#fff0f4;border-color:#efc4d0}.all-mode .badge{background:#ce597a}.all-mode .lesson h2{color:#ac4967}@media(max-width:740px){body{padding:14px 10px 90px}.top{align-items:center}.equation{font-size:21px;padding:8px 14px}.demo{max-width:90px;line-height:1.6;font-size:13px}.tabs button{font-size:15px;padding:9px 7px}.paper{padding:24px 15px 20px 28px}.layout{grid-template-columns:1fr;gap:10px}.drawing svg{max-width:290px}.section-title{font-size:20px}.lesson{padding:15px;min-height:0}.lesson h2{font-size:24px}.math{font-size:23px;min-height:0;padding:10px}.explain{font-size:18px;min-height:0;margin-top:10px}.lesson-head{margin-bottom:10px}.progress{margin-top:16px}.controls{bottom:8px;padding:10px;gap:8px;margin-top:16px}.controls button{font-size:19px}.counter{font-size:15px}.legend{font-size:13px}.note{font-size:13px}}@media(prefers-reduced-motion:no-preference){.lesson{animation:appear .2s ease}@keyframes appear{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top"><span class="demo">ひっさんノート<br>てじゅんの おためし</span><p class="equation" id="equation"></p></header>
+<nav class="tabs" aria-label="ためす けいさん"><button data-op="add">たしざん</button><button data-op="sub">ひきざん</button><button data-op="mul">かけざん</button><button data-op="div" aria-pressed="true">わりざん</button></nav>
+<section class="paper" id="paper"><div class="layout"><div class="drawing"><h1 class="section-title">ひっさん</h1><div id="drawing"></div><p class="legend"><span></span>オレンジは いま かく ところ</p></div><div id="lesson" aria-live="polite" aria-atomic="true"></div></div><nav class="progress" id="progress" aria-label="てじゅんを えらぶ"></nav></section>
+<div class="controls"><button class="prev" id="prev">まえへ</button><span class="counter" id="counter"></span><button class="next" id="next">つぎへ</button></div>
+<div class="extras"><button id="all">ぜんぶ みる</button><button id="restart">はじめから</button></div>
+<p class="note">まずは決まった例で、手順を送る見え方を確認する試作です。<br>数字入力はなく、公開中のアプリ本体とは別のページです。</p>
+</main>
+<script>
+const samples={
+ div:{eq:'72 ÷ 3',answer:'24',steps:[
+ ['たてる','じゅうのくらい','7 ÷ 3 ＝ <strong>2</strong> あまり 1','7の うえに「2」を かくよ。'],
+ ['かける','じゅうのくらい','3 × 2 ＝ <strong>6</strong>','7の したに「6」を かくよ。'],
+ ['ひく','じゅうのくらい','7 − 6 ＝ <strong>1</strong>','せんを ひいて、のこりの「1」を かくよ。'],
+ ['おろす','いちのくらい','1 と 2 で <strong>12</strong>','つぎの「2」を おろすと、12に なるよ。'],
+ ['たてる','いちのくらい','12 ÷ 3 ＝ <strong>4</strong>','2の うえに「4」を かくよ。'],
+ ['かける','いちのくらい','3 × 4 ＝ <strong>12</strong>','12の したに「12」を かくよ。'],
+ ['ひく・できあがり','いちのくらい','12 − 12 ＝ <strong>0</strong>','あまりは 0。こたえは「24」だね！']
+ ]},
+ add:{eq:'27 ＋ 15',answer:'42',steps:[
+ ['たす','いちのくらい','7 ＋ 5 ＝ <strong>12</strong>','まずは みぎの くらいから たすよ。'],
+ ['かく・くりあげる','いちのくらい','12 は <strong>10 と 2</strong>','「2」を かいて、1を じゅうのくらいへ くりあげるよ。'],
+ ['たす','じゅうのくらい','2 ＋ 1 ＋ 1 ＝ <strong>4</strong>','くりあがりの 1も わすれずに たそう。'],
+ ['かく・できあがり','じゅうのくらい','こたえは <strong>42</strong>','「4」を かいて、できあがり！']
+ ]},
+ sub:{eq:'52 − 28',answer:'24',steps:[
+ ['くらべる','いちのくらい','<strong>2</strong> から 8 は ひけない','じゅうのくらいから 1を かりよう。'],
+ ['くりさげる','じゅう → いち','5 は 4 に、2 は <strong>12</strong> に','かりた 10を、いちのくらいへ うつすよ。'],
+ ['ひく','いちのくらい','12 − 8 ＝ <strong>4</strong>','みぎに「4」を かくよ。'],
+ ['ひく・できあがり','じゅうのくらい','4 − 2 ＝ <strong>2</strong>','ひだりに「2」を かくと、こたえは 24！']
+ ]},
+ mul:{eq:'23 × 14',answer:'322',steps:[
+ ['かける','いちのくらい','3 × 4 ＝ <strong>12</strong>','「2」を かいて、1を くりあげるよ。'],
+ ['かける','じゅうのくらい','2 × 4 ＋ 1 ＝ <strong>9</strong>','「9」を かくと、はじめの だんは 92だよ。'],
+ ['かける','つぎの だん','3 × 1 ＝ <strong>3</strong>','つぎの だんは、ひとつ ひだりから かくよ。'],
+ ['かける','つぎの だん','2 × 1 ＝ <strong>2</strong>','「2」を かくよ。この だんは 230を あらわすよ。'],
+ ['たす','いちのくらい','2 ＋ 0 ＝ <strong>2</strong>','せんを ひいて、みぎから たしていこう。'],
+ ['たす','じゅうのくらい','9 ＋ 3 ＝ <strong>12</strong>','「2」を かいて、1を くりあげるよ。'],
+ ['たす・できあがり','ひゃくのくらい','2 ＋ 1 ＝ <strong>3</strong>','「3」を かいて、こたえは 322！']
+ ]}
+};
+let op='div',step=0,all=false;
+const el=id=>document.getElementById(id);
+function digit(value,x,y,from=1,active=from,cls='digit',until=99){return {value,x,y,from,active,cls,until};}
+function shape(){
+ if(op==='div')return {digits:[digit('3',90,126,1,-1),digit('7',190,126,1,-1),digit('2',254,126,1,-1),digit('2',190,56,1,1),digit('4',254,56,5,5),digit('6',190,184,2,2),digit('1',190,246,3,3),digit('2',254,246,4,4),digit('1',190,302,6,6),digit('2',254,302,6,6),digit('0',254,360,7,7)],lines:[[162,206,216,206,3],[162,320,280,320,7]],base:'<path class="stroke" d="M142 82 C163 94 163 132 142 145 M142 82 H282"/>',guides:[158,222,286],focus:{1:[190,126],2:[90,126],3:[190,126],4:[254,126],5:[254,246],6:[90,126]}};
+ if(op==='add')return {digits:[digit('2',190,130,1,-1),digit('7',254,130,1,-1),digit('＋',112,198,1,-1),digit('1',190,198,1,-1),digit('5',254,198,1,-1),digit('1',190,66,2,2,'small'),digit('2',254,288,2,2),digit('4',190,288,4,4)],lines:[[147,220,282,220,1]],guides:[158,222,286],focus:{1:[254,130],3:[190,130]}};
+ if(op==='sub')return {digits:[digit('5',190,130,1,-1),digit('2',254,130,1,-1),digit('−',112,198,1,-1),digit('2',190,198,1,-1),digit('8',254,198,1,-1),digit('4',190,67,2,2,'small'),digit('12',254,67,2,2,'small'),digit('4',254,288,3,3),digit('2',190,288,4,4)],lines:[[147,220,282,220,1],[176,115,204,138,2],[240,115,268,138,2]],guides:[158,222,286],focus:{1:[254,130],3:[254,67],4:[190,67]}};
+ return {digits:[digit('2',190,78,1,-1),digit('3',254,78,1,-1),digit('×',74,136,1,-1),digit('1',190,136,1,-1),digit('4',254,136,1,-1),digit('1',190,194,1,1,'small',1),digit('2',254,211,1,1),digit('9',190,211,2,2),digit('3',190,268,3,3),digit('2',126,268,4,4),digit('2',254,346,5,5),digit('2',190,346,6,6),digit('1',126,302,6,6,'small',6),digit('3',126,346,7,7)],lines:[[100,157,282,157,1],[100,288,282,288,5]],guides:[94,158,222,286],focus:{1:[254,78],2:[190,78],3:[190,136],4:[190,78],5:[254,211],6:[190,211],7:[126,268]}};
+}
+function drawing(){const s=shape(),at=all?99:step+1;let out='<svg viewBox="0 0 360 390" role="img" aria-label="'+samples[op].eq+' の ひっさん、'+(all?'ぜんぶ':`てじゅん${at}`)+'">';
+ for(const x of s.guides)out+=`<line class="guide" x1="${x}" x2="${x}" y1="30" y2="368"/>`;
+ if(!all&&s.focus[at]){const [x,y]=s.focus[at];out+=`<rect class="highlight" x="${x-27}" y="${y-42}" width="54" height="54" rx="12"/>`;}
+ out+=s.base||'';
+ for(const [x1,y1,x2,y2,from]of s.lines)if(at>=from)out+=`<line class="stroke ${!all&&at===from?'fresh-line':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+ for(const d of s.digits)if(at>=d.from&&(all?d.until===99:at<=d.until))out+=`<text class="${d.cls} ${!all&&at===d.active?'fresh':''}" x="${d.x}" y="${d.y}">${d.value}</text>`;
+ if(op==='div'&&!all&&at===4)out+='<path d="M274 143 V207 l-7 -8 M274 207 l7 -8" fill="none" stroke="#e87520" stroke-width="3" stroke-linecap="round"/>';
+ return out+'</svg>';}
+function render(){const s=samples[op],last=step===s.steps.length-1,current=s.steps[step];
+ el('equation').textContent=s.eq+' ＝ '+(all||last?s.answer:'？');
+ el('drawing').innerHTML=drawing();el('paper').classList.toggle('all-mode',all);
+ el('lesson').innerHTML=all?`<section class="lesson"><div class="lesson-head"><span class="badge">✓</span><div><h2>できあがり</h2><div class="place">けいさんの まとめ</div></div></div><div class="math">${s.eq} ＝ <strong>${s.answer}</strong></div><p class="explain">ぜんぶの ひっさんだよ。<br>「てじゅんに もどる」で、つづきから みられるよ。</p></section>`:`<section class="lesson"><div class="lesson-head"><span class="badge">${step+1}</span><div><h2>${current[0]}</h2><div class="place">${current[1]}</div></div></div><div class="math">${current[2]}</div><p class="explain">${current[3]}</p></section>`;
+ el('counter').textContent=all?'まとめ':`${step+1} / ${s.steps.length}`;
+ el('prev').disabled=all||step===0;el('next').disabled=all||last;el('next').textContent=last?'できあがり':'つぎへ';
+ el('all').textContent=all?'てじゅんに もどる':'ぜんぶ みる';
+ el('progress').innerHTML=s.steps.map((_,i)=>`<button class="${!all&&i===step?'current':i<step?'past':''}" aria-label="てじゅん${i+1}" ${!all&&i===step?'aria-current="step"':''} data-step="${i}">${i+1}</button>`).join('');
+ for(const b of document.querySelectorAll('[data-op]'))b.setAttribute('aria-pressed',String(b.dataset.op===op));}
+el('prev').onclick=()=>{if(!all&&step>0){step--;render();}};el('next').onclick=()=>{if(!all&&step<samples[op].steps.length-1){step++;render();}};
+el('all').onclick=()=>{all=!all;render();};el('restart').onclick=()=>{step=0;all=false;render();};
+el('progress').onclick=e=>{const b=e.target.closest('[data-step]');if(b){step=Number(b.dataset.step);all=false;render();}};
+for(const b of document.querySelectorAll('[data-op]'))b.onclick=()=>{op=b.dataset.op;step=0;all=false;render();};
+render();
+</script>
+</body>
+</html>
