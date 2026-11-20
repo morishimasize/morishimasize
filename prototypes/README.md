@@ -23,3 +23,7 @@
 ### 手書き版への更新
 
 `game-preview.html` は `handwriting-preview.js`・`digit-reader.js`・`handwriting-preview.css` を使う手書き版に更新しています。採点の前に認識した数字を確認・修正し、ごほうびは絵の段階的な完成です。途中式採点は将来の予定です。現行の仕様・制約はルートREADME「手書き解答と絵が完成する試作」を参照してください。
+
+## 筆算全体を手書きする最新版
+
+`full-notebook.html` は式の下の空白の方眼にすべての筆算を書く試作です。`full-notebook.js`・`full-notebook.css`・`notebook-engine.js`、既存の `digit-reader.js`・本体の `steps.js` を使います。リングや別の横罫線を外した普通の方眼ノートです。読み取りを確認・修正してから、途中の数・小さな数・線も含めて採点します。仕様・制約はルートREADMEの「筆算を全部手書きする方眼ノートの試作」を参照してください。
