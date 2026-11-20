@@ -1,0 +1,74 @@
+/* A案：ぷっくりシール。計算の配置と操作は維持し、両画面の外観を揃える。 */
+body,body.answer-mode{
+  --color-main:#D51A75;--color-text:#603323;--paper:#FFFFFF;
+  background-color:#FFCCE3;
+  background-image:radial-gradient(ellipse at 50% 8%,#FFF0F6 0%,transparent 65%),radial-gradient(ellipse at 10% 85%,#FFABD2 0%,transparent 48%),repeating-linear-gradient(135deg,#FFFFFF15 0 30px,transparent 30px 60px);
+  background-size:auto;background-attachment:fixed;color:var(--color-text);
+}
+body{padding-top:max(46px,env(safe-area-inset-top));}
+body::before{content:'';position:fixed;inset:0 0 auto;height:28px;z-index:0;pointer-events:none;background-color:#AEEBFF;background-image:linear-gradient(90deg,#FFFFFF70 50%,transparent 50%),linear-gradient(#FFFFFF70 50%,transparent 50%);background-size:24px 24px;border-bottom:4px solid #FFDA42;border-radius:0 0 15px 15px;box-shadow:0 3px 0 #FFFFFFCC;}
+body.answer-mode{padding-top:max(18px,env(safe-area-inset-top));}
+body.answer-mode::before{height:8px;background-size:16px 16px;border-bottom-width:3px;}
+#app{z-index:1;}
+.brand{position:relative;padding:0 80px;margin:12px auto 22px;}
+.brand h1{display:table;position:relative;margin:0 auto 12px;padding:8px 24px;background:#FFFDFE;border:3px dashed #F469A7;outline:5px solid #FFF;border-radius:44px;box-shadow:0 8px 0 #EBA2C4,0 12px 20px #D6518A20;color:#603323;font-weight:900;letter-spacing:.025em;font-size:clamp(30px,4.4vw,52px);}
+.brand .pencil-icon{display:none;}
+.brand p{font-weight:900;color:#603323;}
+.theme-sticker{position:absolute;pointer-events:none;user-select:none;line-height:1;filter:drop-shadow(2px 0 0 #FFF) drop-shadow(-2px 0 0 #FFF) drop-shadow(0 2px 0 #FFF) drop-shadow(0 -2px 0 #FFF) drop-shadow(0 5px 1px #D8649940);}
+.sticker-strawberry{left:24px;top:4px;font-size:70px;transform:rotate(-13deg);}
+.sticker-bow{right:24px;top:3px;font-size:78px;transform:rotate(12deg);}
+.sticker-pencil{position:absolute;right:12px;top:146px;width:110px;height:165px;object-fit:contain;pointer-events:none;user-select:none;z-index:2;}
+.notebook{border:6px solid #FFDA3B;outline:3px solid #FFF;border-radius:32px;background-color:#FFF;background-image:linear-gradient(#C4E9F566 1px,transparent 1px),linear-gradient(90deg,#C4E9F566 1px,transparent 1px);background-size:24px 24px;box-shadow:inset 0 0 0 2px #FFF,0 7px 0 #EDAF36,0 13px 0 #ECA0BF66,0 18px 28px #CD568B18;}
+.notebook::before{left:-16px;top:34px;bottom:28px;width:36px;background:radial-gradient(ellipse at 50% 50%,#FFACD4 0 24%,#FF60AB 29% 44%,#E9358C 47% 51%,#FFF 54% 62%,transparent 66%) 0 0/36px 84px repeat-y;filter:drop-shadow(0 3px 1px #CB3E7840);}
+.notebook::after{left:26px;top:-15px;width:72px;height:25px;border:2px solid #FFF;border-radius:7px;background:radial-gradient(#FFF 1.5px,transparent 2px) 0 0/12px 12px,linear-gradient(#FFA1CB,#F667A9);box-shadow:0 3px 0 #EB83B1;}
+.card.notebook{padding-left:52px;padding-right:36px;}
+.number-field label{font-weight:900;}
+.num-box{border:4px solid #F763A6;border-radius:25px;background:linear-gradient(#FFF 0 74%,#FFF1F7);box-shadow:inset 0 3px 0 #FFF,0 5px 0 #DA4D8F,0 8px 0 #FFC8DF;}
+.num-box.active{background:linear-gradient(#FFFED4,#FFF7A1);border-color:#EDBD08;box-shadow:inset 0 3px 0 #FFF9CD,0 5px 0 #D6A800,0 8px 0 #FFE884;}
+#current-op{color:#603323 !important;}
+.op-btn{position:relative;border:3px solid #FFF;background:linear-gradient(#FFB9DB 0%,#FC77B3 55%,#F4479A 100%);color:#7B2353;box-shadow:inset 0 3px 0 #FFE9F4,0 4px 0 #CE4387,0 6px 0 #FFE7F2;}
+.op-btn.active{border-color:#FFF;color:#FFF;background:linear-gradient(#7CDFFF,#27B9EF 55%,#1399DD);box-shadow:inset 0 3px 0 #D5F7FF,0 4px 0 #167AAF,0 6px 0 #D8F5FF;}
+.key{position:relative;color:#603323;border:2px solid #E0DCE0;background:linear-gradient(#FFF,#FFF 75%,#F0F0F6);box-shadow:inset 0 3px 0 #FFF,0 5px 0 #C7C2CC,0 7px 0 #F4EFF6;}
+.key:nth-child(even):not(.key-del):not(.key-clr){background:linear-gradient(#FFDEEE,#FFB5D6);border-color:#EF92BA;box-shadow:inset 0 3px 0 #FFF1F8,0 5px 0 #D77DAB,0 7px 0 #FFE3F0;}
+.key::before,.op-btn::before{content:'';position:absolute;top:5px;left:10px;width:30%;height:6px;border-radius:100%;background:#FFFFFFB3;pointer-events:none;transform:rotate(-10deg);}
+.key-del{background:linear-gradient(#DAF6FF,#9DDFFC);border-color:#7EC8EB;color:#255E79;box-shadow:inset 0 3px 0 #F0FBFF,0 5px 0 #6BB4DA,0 7px 0 #D2F2FF;}
+.key-clr{background:linear-gradient(#F0E5FF,#DBC0F7);border-color:#C09ADD;color:#69408B;box-shadow:inset 0 3px 0 #FFF5FF,0 5px 0 #AC87CA,0 7px 0 #F1E4FF;}
+.calc-btn,.lesson-next{border:3px solid #FFF;background:linear-gradient(#FF9BCD 0%,#F8409C 48%,#DF1377 100%);color:#FFF;box-shadow:inset 0 4px 0 #FFD7EB,0 5px 0 #B62067,0 8px 0 #F9A9CB;text-shadow:0 2px 0 #A91C6240;}
+.calc-btn{border-radius:40px;font-weight:900;}
+.key:active,.op-btn:active,.calc-btn:active,.lesson-controls button:not(:disabled):active{transform:translateY(3px);}
+.back-btn,.lesson-prev{background:linear-gradient(#D1F4FF,#83D5F7);border:3px solid #FFF;color:#245E7C;box-shadow:inset 0 3px 0 #F7FDFF,0 4px 0 #5DAED6,0 6px 0 #C8F0FF;}
+body.answer-mode .back-btn{padding:8px 15px;}
+.hdr{border:3px solid #FFF;background:linear-gradient(#FFF9FC,#FFE2EE);box-shadow:0 4px 0 #E79BBB,0 0 0 2px #F5C0D7;}
+.panel-title{background:#FFDFEC;border:2px solid #FFF;box-shadow:0 3px 0 #EDABC6;color:#9A3261;}
+.hp-grid-wrap{border-right-color:#F0BED5;}
+.lesson-explanation{position:relative;background:#FFF9FC;border:3px solid #FFCC46;outline:2px solid #FFF;border-radius:27px;box-shadow:0 5px 0 #F0ABCA,inset 0 0 0 5px #FFE4F0;}
+.lesson-heading h2{color:#AA285F;font-weight:900;}
+.lesson-heading p{color:#8A526B;}
+.lesson-badge{background:linear-gradient(#FF8DC1,#E42C89);border:2px solid #FFF;box-shadow:0 3px 0 #C74683;}
+.lesson-math{background:#FFF;border:2px dashed #F3A2C6;}
+.lesson-description{color:#603323;}
+.lesson-progress{background:#F8DCE8;border:1px solid #FFF;height:11px;}
+.lesson-progress span{background:linear-gradient(90deg,#6BD3F8,#F67CB4);}
+.lesson-options button{background:#FFF6FA;border-color:#F0BBD2;color:#8E3B65;box-shadow:0 3px 0 #E6ACC5;}
+.lesson-controls{background:linear-gradient(#FFF7FBF5,#FFE2F0F5);border:3px solid #FFF;box-shadow:0 4px 0 #E993BB,0 0 0 2px #F3BBD5;}
+.lesson-controls button{border:3px solid #FFF;border-radius:24px;font-weight:900;}
+#lesson-count{color:#7B3452;background:#FFF9DE;border:2px solid #F4D178;border-radius:18px;padding:8px 9px;}
+.lesson-controls button:disabled{opacity:.45;box-shadow:none;}
+.lesson-explanation.is-overview{background:#FFF4D8;border-color:#FFC339;}
+.answer-ribbon{background:#FFE3EF;border:3px solid #FFF;box-shadow:0 4px 0 #EEA9C6;}
+button:focus-visible,.lesson-board-viewport:focus-visible{outline:4px solid #236DAD;outline-offset:5px;}
+@media(min-width:701px) and (min-height:850px) and (orientation:portrait){
+ body:not(.answer-mode) #app{height:calc(100vh - max(46px,env(safe-area-inset-top)) - max(28px,env(safe-area-inset-bottom)) - 16px);height:calc(100svh - max(46px,env(safe-area-inset-top)) - max(28px,env(safe-area-inset-bottom)) - 16px);}
+}
+@media(max-width:1049px){.sticker-bow{display:none;}.sticker-pencil{top:-10px;right:6px;width:62px;height:94px;}.sticker-strawberry{left:12px;font-size:58px;}}
+@media(min-width:701px) and (orientation:landscape) and (max-height:850px){
+ .brand{margin:6px auto 16px;}.brand h1{font-size:38px;padding:5px 24px;}.brand p{font-size:18px;}.card.notebook{gap:14px;padding-top:22px;padding-bottom:24px;}.card .num-box{height:86px;}.card .op-btn{width:60px;height:60px;}.card .key{height:60px;}.card .key-del,.card .key-clr{height:48px;}.card .calc-btn{height:64px;}
+}
+@media(max-width:700px){
+ body{padding-top:max(36px,env(safe-area-inset-top));}.brand{padding:0 40px;margin:8px auto 20px;}.brand h1{font-size:27px;padding:7px 12px;margin-bottom:12px;border-width:2px;outline-width:4px;}.brand p{font-size:17px;}.sticker-strawberry{left:-1px;top:4px;font-size:37px;}.sticker-pencil{right:-2px;top:-5px;width:43px;height:66px;}
+ .notebook{border-width:5px;border-radius:28px;}.card.notebook{padding:24px 14px 25px 29px;}.notebook::before{left:-7px;top:30px;bottom:20px;width:22px;background-size:22px 68px;}.notebook::after{left:22px;width:58px;height:21px;top:-13px;}.number-field label{font-size:13px;}.op-btn{width:56px;height:56px;}.op-group{gap:12px;}.key{border-radius:16px;}.calc-btn{font-size:23px;}.answer-book{padding:24px 14px 22px 26px;}.lesson-explanation{border-radius:23px;}.lesson-heading h2{font-size:22px;}.lesson-controls{padding:9px;gap:7px;}.lesson-controls button{font-size:20px;min-height:58px;}#lesson-count{font-size:14px;padding:7px 6px;}.lesson-math{padding:9px 7px;}
+}
+@media(prefers-reduced-motion:reduce){button{transition:none;}}
+/* 解答のマスを避け、ノートの外縁だけに鉛筆シールを添える。 */
+.answer-book::after{left:auto;right:-12px;top:auto;bottom:-28px;width:80px;height:120px;border:0;border-radius:0;background:url('assets/pencil-sticker.png') center/contain no-repeat;box-shadow:none;transform:rotate(4deg);}
+@media(max-width:700px){.answer-book::after{right:-10px;bottom:-24px;width:52px;height:78px;}}
