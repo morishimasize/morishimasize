@@ -18,3 +18,8 @@
 ## ゲーム性の試作
 
 `game-preview.html`・`game-preview.css`・`game-preview.js` は、今日の3問→ごほうび→シール帳の体験を確認する独立した試作です。公開URLと仕様はルートのREADME「ゲーム性の試作」を参照してください。本体の計算・手順表示は変更していません。
+
+
+### 手書き版への更新
+
+`game-preview.html` は `handwriting-preview.js`・`digit-reader.js`・`handwriting-preview.css` を使う手書き版に更新しています。採点の前に認識した数字を確認・修正し、ごほうびは絵の段階的な完成です。途中式採点は将来の予定です。現行の仕様・制約はルートREADME「手書き解答と絵が完成する試作」を参照してください。
