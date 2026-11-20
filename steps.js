@@ -14,13 +14,14 @@ function buildLesson(op, a, b) {
   const width = Math.max(String(a).length, String(b).length, String(value).length);
   const model = {op,a,b,value,remainder,answer,equation:`${a} ${LESSON_SIGNS[op]} ${b}`,steps:[],columns:[52,...Array(width).fill(58)],resultRow:2};
   const cells = {}, lines = {};
+  let baseline = {};
   const id = (row,col) => `${row}:${col}`;
   const put = (row,col,text,extra={}) => {cells[id(row,col)]={row,col,text:String(text),...extra};return id(row,col);};
   const note = (row,col,text) => {const key=id(row,col);cells[key]={row,col,text:'',...cells[key],note:String(text)};return key;};
   const rule = (key,row,start,end) => {lines[key]={row,start,end};};
   const writeNumber = (n,row,end,extra={}) => String(n).split('').map((d,i,ds)=>put(row,end-ds.length+1+i,d,extra));
   const push = (title,place,math,description,focus=[],arrow=null) => {
-    const previous = model.steps.length ? model.steps[model.steps.length-1].cells : {};
+    const previous = model.steps.length ? model.steps[model.steps.length-1].cells : baseline;
     const fresh = Object.keys(cells).filter(key=>!previous[key] || JSON.stringify(previous[key])!==JSON.stringify(cells[key]));
     model.steps.push({title,place,math,description,focus,arrow,fresh,cells:JSON.parse(JSON.stringify(cells)),lines:JSON.parse(JSON.stringify(lines))});
   };
@@ -39,6 +40,7 @@ function buildLesson(op, a, b) {
     put(1,0,LESSON_SIGNS[op],{kind:'operator'});
     writeNumber(b,1,width);
     rule('operands',2,0,width);
+    baseline=JSON.parse(JSON.stringify(cells));
   }
 
   if (op === '+') {
@@ -113,6 +115,7 @@ function buildLesson(op, a, b) {
   model.columns=[52,Math.max(58,String(b).length*25+18),...Array(N).fill(58)];
   model.resultRow=0;model.dividendEnd=N+1;
   put(1,1,b,{kind:'divisor'});writeNumber(a,1,N+1);
+  baseline=JSON.parse(JSON.stringify(cells));
   let start=N-1,prefix=0;
   for(let i=0;i<N;i++){prefix=prefix*10+Number(dividend[i]);if(prefix>=b){start=i;break;}}
   let current=Number(dividend.slice(0,start+1)),productRow=2;
