@@ -252,9 +252,10 @@
     .gc .lb { width: 100%; overflow-wrap: anywhere; }
     .grid-line { justify-self: stretch; height: 3px; background: #5F4B32; margin: 4px 0; }
     .division-rule { grid-column: 1 / -1; justify-self: stretch; position: relative; height: 3px; }
-    .division-divisor { width: auto; min-width: 58px; padding-left: 8px; white-space: nowrap; }
-    .division-digit { position: relative; border-top: 4px solid #5F4B32; }
-    .division-digit::before { content: ''; position: absolute; top: -4px; left: -12px; width: 12px; border-top: 4px solid #5F4B32; }
+    .division-divisor { position: relative; width: auto; min-width: 58px; padding: 0 12px 0 8px; justify-content: flex-end; white-space: nowrap; }
+    .division-digit { position: relative; }
+    .division-digit::before { content: ''; position: absolute; top: 0; left: -14px; right: 0; border-top: 3px solid #5F4B32; }
+    .division-curve { position:absolute; top:0; right:-14px; width:18px; height:58px; overflow:visible; pointer-events:none; }
     .hdr { text-align: center; max-width: 100%; overflow-wrap: anywhere; line-height: 1.6; }
     .steps-wrap { width: 100%; min-width: 0; padding-top: 4px; }
     .steps-title { font-size: 18px; text-align: center; margin: 8px 0 14px; }
@@ -321,6 +322,7 @@
     .steps-wrap { padding:0; }
     .grid-scroll { padding-top:6px; }
     .gc .c { font-size:36px; font-family:inherit; font-weight:700; border-radius:14px !important; }
+    .gc .division-divisor, .gc .division-digit { border: none; border-radius: 0 !important; }
     .gc .sc { font-size:19px; font-family:inherit; border-radius:9px !important; }
     .gc .ca { color:#C83F66; background:#FCE0E8 !important; border-color:#F5B7CA !important; font-weight:900; }
     .step-card { display:block; padding:16px 18px; margin-bottom:14px; border:2px solid var(--step-edge); border-left:2px solid var(--step-edge); border-radius:22px; background:var(--step-wash) !important; box-shadow:0 3px 0 #6A8B5C0A; backdrop-filter:none; -webkit-backdrop-filter:none; }
@@ -862,12 +864,15 @@
     // ── 行2：割る数 ＋ ）＋ 横線 ＋ 被除数 ──
     // 列1: 空
     g += ge();
-    // 列2: 割る数（右に縦線のみ → 「）」の縦棒）
-    g += `<div class="c cv division-divisor" style="border-right:4px solid #5F4B32; justify-content:flex-end; padding-right:6px; font-weight:bold;">${div}</div>`;
+    // 数字の丸いマスと記号を分離。曲線はSVG、横線は角丸なしの疑似要素で描く。
+    g += `<div class="c cv division-divisor">${div}` +
+      `<svg class="division-curve" viewBox="0 0 18 58" aria-hidden="true" focusable="false">` +
+        `<path d="M 2 1.5 C 18 9, 18 49, 2 56.5" fill="none" stroke="#5F4B32" stroke-width="3" stroke-linecap="round"/>` +
+      `</svg></div>`;
     // 列3～N+2: 被除数（上に横線 → 「―――」）
     for (let i = 0; i < N; i++) {
       const color = colClr(i, N);
-      g += `<div class="c cv division-digit" style="border-top:4px solid #5F4B32; background:${color}05; font-weight:bold;">${dvdS[i]}</div>`;
+      g += `<div class="c cv division-digit" style="background:${color}05; font-weight:bold;">${dvdS[i]}</div>`;
     }
 
     let stepsHTML = '';
