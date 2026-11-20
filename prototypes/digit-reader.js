@@ -35,7 +35,7 @@ function normalize(strokes){
  const w=maxX-minX,h=maxY-minY,scale=Math.max(w,h);if(scale<8)return null;
  for(const s of strokes)for(let i=1;i<s.length;i++){const len=dist(s[i-1],s[i]);if(len>0){segments.push({a:s[i-1],b:s[i],start:total,len});total+=len;}}
  if(!total||total/scale>12)return null;
- const cloud=[];for(let i=0;i<64;i++){const pos=(i+.5)*total/64;const seg=segments.find(s=>pos<=s.start+s.len)||segments[segments.length-1];const t=Math.max(0,Math.min(1,(pos-seg.start)/seg.len));cloud.push([(seg.a[0]+(seg.b[0]-seg.a[0])*t-(minX+maxX)/2)/scale,(seg.a[1]+(seg.b[1]-seg.a[1])*t-(minY+maxY)/2)/scale]);}
+ const sx=Math.max(w,scale*.15),sy=Math.max(h,scale*.15);const cloud=[];for(let i=0;i<64;i++){const pos=(i+.5)*total/64;const seg=segments.find(s=>pos<=s.start+s.len)||segments[segments.length-1];const t=Math.max(0,Math.min(1,(pos-seg.start)/seg.len));cloud.push([(seg.a[0]+(seg.b[0]-seg.a[0])*t-(minX+maxX)/2)/sx,(seg.a[1]+(seg.b[1]-seg.a[1])*t-(minY+maxY)/2)/sy]);}
  return {cloud,ratio:w/Math.max(h,1),length:total/scale};
 }
 function cloudDistance(a,b){let sum=0;for(const p of a){let nearest=Infinity;for(const q of b)nearest=Math.min(nearest,dist(p,q));sum+=nearest;}return sum/a.length;}

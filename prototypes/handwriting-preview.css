@@ -3,3 +3,11 @@
 @media(min-width:760px){.ink-book .writing-paper{padding:24px 32px}.ink-strip{max-width:560px}.ink-strip.short{max-width:274px}}
 @media(max-width:700px){.picture-preview{grid-template-columns:1fr;padding:16px;gap:12px}.picture-preview .reveal-picture{max-width:310px;width:100%;margin:auto}.ink-book{padding-left:22px;padding-right:14px}.ink-book .row{gap:8px}.ink-book .row>button{font-size:13px;min-height:48px}.ink-book .row h1{font-size:27px}.ink-book .eyebrow{font-size:12px}.ink-book .progress{margin:13px 0}.ink-instruction{padding:11px}.ink-instruction strong{font-size:18px}.ink-instruction p{font-size:13px}.writing-paper{padding:12px 8px}.ink-strip{gap:6px}.ink-strip.short{width:calc(50% - 3px)}.ink-cell{border-radius:10px}.ink-tools{gap:6px}.ink-tools button{font-size:13px;min-height:48px}.ink-actions{gap:8px}.ink-actions button{font-size:16px;padding:10px 8px}.review-panel{padding:14px}.review-panel h2{font-size:18px}.ink-book .controls{gap:8px}.reveal-picture.large{margin-top:18px}.picture-count{font-size:16px}.ink-book .promise{font-size:12px}}
 @media(prefers-reduced-motion:no-preference){.revealed{animation:reveal .7s ease-out}@keyframes reveal{from{opacity:0}to{opacity:1}}}
+/* Place each hidden-piece marker in its quadrant. */
+.picture-part span{position:absolute;transform:translate(-50%,-50%)}
+.part-0 span{left:25%;top:25%;transform:translate(-50%,-50%)}
+.part-1 span{left:25%;top:75%;transform:translate(-50%,-50%)}
+.part-2 span{left:75%;top:25%;transform:translate(-50%,-50%)}
+.part-3 span{left:75%;top:75%;transform:translate(-50%,-50%)}
+.book.reward{padding:30px 30px 30px 44px}
+@media(max-width:700px){.book.reward{padding:24px 14px 24px 25px}.ink-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ink-tools button{font-size:14px}}
