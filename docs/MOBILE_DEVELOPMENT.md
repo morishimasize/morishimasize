@@ -7,7 +7,7 @@
 - 最新の作業内容：ルートの `DEVELOPMENT_STATUS.md`
 - 作業ルール：ルートの `AGENTS.md`
 - 公開アプリ： https://morishimasize.github.io/morishimasize/
-- 筆算を全部手書きする試作： https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
+- 手書きノートとゲーム： https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 
 ## PCの電源に依存しない方法：Codex Cloud
 
@@ -34,8 +34,8 @@ OpenAIの案内では、デスクトップまたはWebで開発環境を作成�
 「ひっさんノート」の開発を続けてください。
 GitHub: morishimasize/morishimasize、ブランチ main。
 最初にAGENTS.md、DEVELOPMENT_STATUS.md、README.mdを読んで、mainの最新状態を確認してください。
-筆算を全部手書きする試作は prototypes/full-notebook.html です。
-本体 index.html への組み込みは、私が頼むまで行わないでください。
+正式な開始画面は index.html、電卓は calculator.html、手書きノートとゲームは prototypes/full-notebook.html です。
+ゲームの既存の保存データを引き継ぎ、3つの入口と「はじめに」の操作を維持してください。
 修正内容を確認し、GitHubに反映して、スマホから触れる公開URLを教えてください。
 今回お願いしたい変更：
 （ここに希望を書く）

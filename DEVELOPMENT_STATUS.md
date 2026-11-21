@@ -10,7 +10,7 @@
 - ごほうびはシールより、少しずつ絵が完成する方式がよい。
 - 出先のスマホでも開発の続きを依頼したい。
 
-## 最新の試作
+## 手書きノートとゲームの実装
 
 https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 
@@ -69,8 +69,19 @@ https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 
 画面案： https://morishimasize.github.io/morishimasize/prototypes/home-preview.html
 
-「こたえを みる」「じぶんで とく」「けいさんゲーム」の3つを大きく縦に配置。数字入力は選択後に表示し、各入口から実際に試せる。試作から入った場合は「はじめに」で画面案へ戻る。ユーザーは最初のUI案を見たい段階のため、通常の `index.html` の入口は置き換えていない。
+「こたえを みる」「じぶんで とく」「けいさんゲーム」の3つを大きく縦に配置。数字入力は選択後に表示し、各入口から実際に試せる。試作から入った場合は「はじめに」で画面案へ戻る。この段階では画面案だったが、その後ユーザーの「諸々実装しよう」の依頼を受け、下記の正式な入口へ採用した。
 
 ゲームは正解直後に完了数を自動保存。問題・ペンを離した筆跡・読み取り修正・採点画面も保存し、次回「つづきから あそぶ」で再開する。`prototypes/notebook-save.js` が進み具合と途中ノートを1レコードへ保存し、旧v1の完了数を引き継ぐ。再開・再採点による二重獲得を防ぐ。保存枠は途中ノート1つ。同じ端末・ブラウザ内のみ。保存失敗時はその場に案内する。電卓側はゲーム記録に触れない。古い答えだけ手書きの試作の保存動作は変更していない。
 
 `python3 tools/test-game-save.py` の29項目と、ブラウザでの筆跡・確認・採点の復元、再採点後も完了数が1のままであることを確認。画面案は375×667と768×1024で確認。ペンや指の実機確認は未実施。
+
+
+## 最新：3つの入口を正式採用（2026-11-21）
+
+公開アプリ： https://morishimasize.github.io/morishimasize/
+
+`index.html` が正式なホーム画面。「こたえを みる」「じぶんで とく」「けいさんゲーム」を縦に大きく配置する。`home.css` と `home.js` がデザインとゲーム再開表示を担当。電卓の入力・解答表示は `calculator.html` へ移した。ゲームと電卓の手書きは引き続き `prototypes/full-notebook.html` を共用するが、通常の画面に「おためし」表記や過去の試作へのリンクは出さない。「はじめに」は正式な `index.html` へ戻る。
+
+旧 `index.html?mode=answer/practice&…` のURLは式のパラメーターを維持して `calculator.html` へ移動する。既存のゲーム保存キーと保存内容は変更していない。以前の `home-preview.html` は過去の画面案として残す。
+
+確認：`python3 tools/test-game-save.py` の29項目、`python3 tools/test-calculator.py` の193例・5,294項目。ブラウザでiPhone・iPad幅、3つの入口、解答表示、手書きの入力復元、ゲームの保存からの再開、正式ホームへの復帰、旧URLの引き継ぎを確認。実機でのペンや指は未確認。

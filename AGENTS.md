@@ -6,7 +6,7 @@
 - GitHub： https://github.com/morishimasize/morishimasize
 - 対象ブランチ：`main`
 - 公開URL： https://morishimasize.github.io/morishimasize/
-- アプリ本体：`index.html`。計算と手順：`steps.js`。見た目：`pop-theme.css`。アイコン：`icon.png`。素材：`assets/`。使い方：`README.md`。
+- 開始画面：`index.html`（`home.css`・`home.js`）。電卓の入力と解答：`calculator.html`。手書きノートとゲーム：`prototypes/full-notebook.html`。計算と手順：`steps.js`。電卓の見た目：`pop-theme.css`。アイコン：`icon.png`。素材：`assets/`。使い方：`README.md`。
 - 説明は日本語で、利用者向けの画面はひらがな中心。既存のデザインと計算機能を尊重する。
 
 ## 修正完了ごとのGitHub反映（ユーザーの継続的な希望）
