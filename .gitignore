@@ -1,0 +1,7 @@
+# ローカル同期の基準・バックアップ・競合コピー（GitHubへ送信しない）
+.sync-data/
+# デザイン見本と一時ファイル
+/generated_images/
+.DS_Store
+__pycache__/
+*.pyc

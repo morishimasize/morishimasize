@@ -45,3 +45,9 @@ https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 ## スマホで再開
 
 `docs/MOBILE_DEVELOPMENT.md` に初期設定手順と貼り付け用の再開文がある。Codex Cloudの環境作成・公開やRemoteのペアリングはこのリポジトリを更新しただけでは完了しない。コードと作業状況はGitHubから読み、ローカルの未反映の変更を無断で上書きしない。
+
+## PCとの同期
+
+`sync-local.command`（ダブルクリック）または `python3 tools/sync-local.py` で、GitHubのmainからPCのこのフォルダへ安全に取り込む。アプリのフォルダに独立したGitがない環境向けで、上位Gitは操作しない。PCだけの変更は保持、双方のテキスト変更は3方向で統合、競合は `.sync-data/conflicts/` に双方を保存し上書きしない。変更前は `.sync-data/backups/` に残す。クラウドの正しいGitチェックアウトでは通常のfetch/mergeを使う。
+
+作業開始時の同期ルールをAGENTS.mdへ追加済み。PCからGitHubへの反映はエージェントが引き続き行う。`.sync-data/` とデザイン見本等は `.gitignore` で除外。常駐の自動同期ではない。
