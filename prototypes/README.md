@@ -26,4 +26,4 @@
 
 ## 筆算全体を手書きする最新版
 
-`full-notebook.html` は式の下の空白の方眼にすべての筆算を書く試作です。`full-notebook.js`・`full-notebook.css`・`notebook-engine.js`、既存の `digit-reader.js`・本体の `steps.js` を使います。リングや別の横罫線を外した普通の方眼ノートです。読み取りを確認・修正してから、途中の数・小さな数・線も含めて採点します。仕様・制約はルートREADMEの「筆算を全部手書きする方眼ノートの試作」を参照してください。
+`full-notebook.html` は問題の式を印字した方眼に、途中の計算・小さな数字・追加の線・答えを手書きする試作です。`full-notebook.js`・`full-notebook.css`・`notebook-engine.js`、既存の `digit-reader.js`・本体の `steps.js` を使います。リングや別の横罫線を外した普通の方眼ノートです。読み取りを確認・修正してから、途中の数・小さな数・線も含めて採点します。仕様・制約はルートREADMEの「筆算を全部手書きする方眼ノートの試作」を参照してください。

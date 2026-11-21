@@ -7,3 +7,6 @@
 .review-grid.edit-notes input.note{pointer-events:auto;z-index:3;height:100%;font-size:28px;background:#fff9e4d9}
 
 @media(max-width:700px){.review-columns{grid-template-columns:1fr}}
+
+/* The printed question stays in place while work and small notes are editable. */
+.review-cell.is-given input.main{color:#5b6972;background:#edf2f54d;cursor:default}

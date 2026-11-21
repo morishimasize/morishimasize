@@ -21,10 +21,31 @@ return {main,notes,lines,brackets};}
 function expected(model){const main={},notes={};for(const cell of Object.values(model.finalCells)){if(cell.kind==='label')continue;const k=key(cell.row+1,cell.col+1);if(cell.text!=='')main[k]=cell.text.replace(/＋/g,'+');if(cell.note!==undefined)notes[k]=String(cell.note);}
 const last=model.steps[model.steps.length-1];const lines=Object.values(last.lines).map(l=>({row:l.row+1,start:l.start+1,end:l.end+2}));const brackets=[];if(model.op==='/'){brackets.push({row:2,col:3});lines.push({row:2,start:3,end:model.dividendEnd+2});}
 return {main,notes,lines,brackets};}
+// Only the question operands and its initial rule/bracket are printed.
+// No result, partial product, carry, borrow, or quotient is provided here.
+function given(model){
+ const main={},notes={},lines=[],brackets=[];
+ const number=(n,row,end)=>String(n).split('').forEach((v,i,ds)=>main[key(row,end-ds.length+1+i)]=v);
+ if(model.op==='/'){
+  const count=String(model.a).length;number(model.b,2,2);number(model.a,2,count+2);
+  brackets.push({row:2,col:3});lines.push({row:2,start:3,end:count+3});
+ }else{
+  const end=model.columns.length;number(model.a,1,end);number(model.b,2,end);
+  main[key(2,1)]=model.op==='+'?'+':model.op==='-'?'−':'×';
+  lines.push({row:3,start:1,end:end+1});
+ }
+ return {main,notes,lines,brackets};
+}
+function gradeWork(model,work,rows){
+ const fixed=given(model);
+ // Printed operands win over strokes drawn across them; notes remain editable.
+ const full={main:{...work.main,...fixed.main},notes:{...work.notes},lines:[...fixed.lines,...work.lines],brackets:[...fixed.brackets,...work.brackets]};
+ return grade(model,full,rows,true);
+}
 function translateKey(k,dr,dc){const [r,c]=k.split(':').map(Number);return key(r+dr,c+dc);}
 function shifted(e,dr,dc){return {main:Object.fromEntries(Object.entries(e.main).map(([k,v])=>[translateKey(k,dr,dc),v])),notes:Object.fromEntries(Object.entries(e.notes).map(([k,v])=>[translateKey(k,dr,dc),v])),lines:e.lines.map(l=>({...l,row:l.row+dr,start:l.start+dc,end:l.end+dc})),brackets:e.brackets.map(b=>({row:b.row+dr,col:b.col+dc}))};}
-function grade(model,recognized,rows){const e=expected(model);let best=null;
-for(let dr=-1;dr<rows;dr++)for(let dc=-3;dc<COLS;dc++){const t=shifted(e,dr,dc);if(Object.keys(t.main).some(k=>{const [r,c]=k.split(':').map(Number);return r<0||r>=rows||c<0||c>=COLS;}))continue;let good=0,bad=0,missing=0;for(const [k,v]of Object.entries(t.main)){if(recognized.main[k]===v)good++;else if(!recognized.main[k])missing++;else bad++;}const score=good*3-bad*2-missing;if(!best||score>best.score)best={...t,score,dr,dc};}
+function grade(model,recognized,rows,anchored=false){const e=expected(model);let best=null;
+for(let dr=-1;dr<rows;dr++)for(let dc=-3;dc<COLS;dc++){if(anchored&&(dr!==0||dc!==0))continue;const t=shifted(e,dr,dc);if(Object.keys(t.main).some(k=>{const [r,c]=k.split(':').map(Number);return r<0||r>=rows||c<0||c>=COLS;}))continue;let good=0,bad=0,missing=0;for(const [k,v]of Object.entries(t.main)){if(recognized.main[k]===v)good++;else if(!recognized.main[k])missing++;else bad++;}const score=good*3-bad*2-missing;if(!best||score>best.score)best={...t,score,dr,dc};}
 if(!best)return {ok:false,issues:[{kind:'layout',message:'かく ばしょを もういちど たしかめよう。'}],checks:[]};
 const issues=[],checks=[];for(const type of ['main','notes'])for(const [k,v]of Object.entries(best[type])){const actual=recognized[type][k]||'';const ok=actual===v;checks.push({kind:type,key:k,ok});if(!ok)issues.push({kind:type,key:k,actual,missing:actual==='',message:type==='notes'?'ちいさく かく すうじを たしかめよう。':'この マスの すうじ・しるしを たしかめよう。'});}
 for(const type of ['main','notes'])for(const k of Object.keys(recognized[type]))if(!best[type][k]&&recognized[type][k])issues.push({kind:type,key:k,message:'この マスにも すうじが あるよ。よみとりを たしかめよう。'});
@@ -32,5 +53,5 @@ for(const l of best.lines){const segments=recognized.lines.filter(a=>a.row===l.r
 for(const b of best.brackets){const ok=recognized.brackets.some(x=>x.row===b.row&&x.col===b.col);checks.push({kind:'bracket',...b,ok});if(!ok)issues.push({kind:'bracket',...b,message:'わりざんの かたちを たしかめよう。'});}
 return {ok:issues.length===0,issues,checks,offset:{row:best.dr,col:best.dc}};
 }
-root.NotebookEngine={CELL,COLS,read,readGlyph,expected,grade,bounds,key};
+root.NotebookEngine={CELL,COLS,read,readGlyph,expected,given,gradeWork,grade,bounds,key};
 })(globalThis);
