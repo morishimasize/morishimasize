@@ -11,13 +11,13 @@ jsc = Path('/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpe
 runtime = shutil.which('node') or (str(jsc) if jsc.exists() else None)
 if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
-source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/full-notebook.js'])
+source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/full-notebook.js'])
 harness = r'''
 const testQuery={};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
 const context=new Proxy({}, {get(){return ()=>{};}});
 const nodes=new Map();let appHTML='';
-function node(id){if(!nodes.has(id)){const v={value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},classList:{add(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},insertAdjacentHTML(){},getContext(){return context;},width:432,height:576,getBoundingClientRect(){return {left:0,top:0,width:432,height:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});nodes.set(id,v);}return nodes.get(id);}
+function node(id){if(!nodes.has(id)){const v={value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},classList:{add(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
 const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||appHTML.includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of appHTML.matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
@@ -66,6 +66,24 @@ run(`
  config={op:'*',example:1};$('book').onclick();$('return').onclick();check(NotebookSave.read(storage).session.config.op==='+','new selection corrupted saved equation');
  $('back-write').onclick();$('back').onclick();
  $('start').onclick();check(!credited&&strokes.length===0&&progress===6,'new attempt did not reset only notebook');
+`);
+run(`
+ $('resume').onclick();toggleWorkRule(4);check(NotebookSave.read(storage).session.rules[0].row===4,'button rule not saved');
+ toggleWorkRule(3);check(extraLines.length===1,'printed rule was replaced');
+ undoWork();check(extraLines.length===0,'rule undo failed');toggleWorkRule(4);editRow=5;save();
+`);
+run(`
+ $('resume').onclick();check(extraLines.length===1&&editRow===5,'rule or enlarged row not restored');
+ $('rule-tool').onclick();$('paper').onpointerdown({pointerId:9,button:0,clientX:120,clientY:360,preventDefault(){}});
+ check(extraLines.some(l=>l.row===5)&&tool==='pen','whole notebook line button failed');
+ undoWork();check(extraLines.length===1,'whole notebook line undo failed');
+ $('zoom-row').onclick();check(rowEditorOpen,'row editor not opened');
+ const canvas=$('row-paper');const event=(x,y)=>({pointerId:2,button:0,clientX:x,clientY:y,preventDefault(){}});
+ canvas.onpointerdown(event(250,48));canvas.onpointermove(event(250,99));canvas.onpointerup(event(250,99));
+ check(strokes.at(-1)[0][1]>5*72&&strokes.at(-1)[0][1]<6*72,'enlarged ink saved into wrong row');
+ $('row-close').onclick();check(!rowEditorOpen,'row editor did not close');
+ readAll();check(recognized.lines.some(l=>l.row===4),'button rule lost during reading');
+ check(recognized.main['5:2']==='1','enlarged row ink not recognized');
 `);
 const previous=values.get('hissan-full-notebook-v2');failWrite=true;
 run(`$('resume').onclick();check(!storageOK,'save failure hidden');`);

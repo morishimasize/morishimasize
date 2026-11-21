@@ -27,6 +27,21 @@ const variants={
 8:[[[[49,48],[25,37],[22,19],[42,8],[65,12],[76,28],[63,43],[49,48]],[[49,48],[25,61],[19,80],[35,94],[60,94],[77,78],[68,59],[49,48]]]],
 9:[[[[75,40],[57,50],[32,47],[18,29],[30,10],[56,9],[74,22],[75,40],[73,94]]]]
 };
+// Additional handwritten forms: a separate cap, a narrow/angular lower bowl,
+// and an angular or slightly open loop. These are glyph shapes, not answers.
+variants[1].push(
+ [[[50,7],[48,34],[49,61],[52,82],[57,95]]],
+ [[[45,8],[44,37],[44,66],[48,88],[52,95]]]
+);
+variants[5].push(
+ [[[38,7],[30,26],[29,46],[32,58],[41,75],[41,87],[29,94],[6,96],[0,93],[0,84]],[[20,24],[48,22],[76,22],[98,18]]],
+ [[[43,5],[29,21],[20,42],[19,60],[30,79],[43,94],[39,99],[0,100]],[[28,18],[50,26],[98,26]]],
+ [[[76,9],[24,9]],[[25,8],[22,43],[48,42],[66,57],[69,77],[52,94],[20,92]]]
+);
+variants[9].push(
+ [[[91,22],[67,7],[30,8],[20,21],[20,40],[39,43],[63,34],[75,29],[68,51],[58,74],[48,98]]],
+ [[[86,26],[66,11],[34,8],[18,23],[20,41],[40,45],[63,33],[74,25],[64,58],[48,95]]]
+);
 function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
 function normalize(strokes){
  const segments=[];let total=0;const points=strokes.flat();if(points.length<2)return null;
@@ -41,9 +56,14 @@ function normalize(strokes){
 function cloudDistance(a,b){let sum=0;for(const p of a){let nearest=Infinity;for(const q of b)nearest=Math.min(nearest,dist(p,q));sum+=nearest;}return sum/a.length;}
 const templates=[];
 for(const [digit,strokes] of Object.entries(shapes)){for(const ss of [strokes,...(variants[digit]||[])]){for(const slant of [-.13,0,.13])templates.push({digit,...normalize(ss.map(s=>s.map(([x,y])=>[x+slant*(y-50),y])))});}}
+function compare(input,template){
+ const shape=(cloudDistance(input.cloud,template.cloud)+cloudDistance(template.cloud,input.cloud))/2;
+ const ratio=Math.abs(Math.min(input.ratio,1.5)-Math.min(template.ratio,1.5));
+ return shape+ratio*.07+Math.abs(input.length-template.length)*.015;
+}
 function recognize(strokes){const input=normalize(strokes);if(!input)return [];
- const scores=new Map();for(const t of templates){const shape=(cloudDistance(input.cloud,t.cloud)+cloudDistance(t.cloud,input.cloud))/2;const ratio=Math.abs(Math.min(input.ratio,1.5)-Math.min(t.ratio,1.5));const score=shape+ratio*.025+Math.abs(input.length-t.length)*.008;scores.set(t.digit,Math.min(scores.get(t.digit)??Infinity,score));}
+ const scores=new Map();for(const t of templates){const score=compare(input,t);scores.set(t.digit,Math.min(scores.get(t.digit)??Infinity,score));}
  return [...scores].map(([digit,distance])=>({digit,distance})).sort((a,b)=>a.distance-b.distance).slice(0,3);
 }
-root.DigitReader={recognize,shapes,normalize};
+root.DigitReader={recognize,shapes,normalize,compare};
 })(typeof globalThis==='object'?globalThis:this);
