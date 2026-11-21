@@ -20,8 +20,8 @@ let seed=721;for(let i=0;i<35;i++){seed=(seed*1664525+1013904223)>>>0;const a=se
 const E=NotebookEngine;
 for(const op of ['+','-','*','/'])for(const [a,b]of pairs){
  if(op==='-'&&a<b||op==='/'&&b===0)continue;
- for(const rightAligned of [false,true]){
- const m=Object.assign(buildLesson(op,a,b),{rightAligned}),e=E.expected(m),g=E.given(m),cols=E.columns(m),rows=Math.max(8,...Object.values(m.finalCells).map(c=>c.row+4));
+ for(const [rightAligned,compactPaper] of [[false,false],[true,false],[true,true]]){
+ const m=Object.assign(buildLesson(op,a,b),{rightAligned,compactPaper}),e=E.expected(m),g=E.given(m),cols=E.columns(m),rows=E.rows(m);
  const work=JSON.parse(JSON.stringify(e));for(const k of Object.keys(g.main))delete work.main[k];
  work.lines=work.lines.filter(l=>!g.lines.some(x=>x.row===l.row&&x.start===l.start&&x.end===l.end));work.brackets=[];
  assert(E.gradeWork(m,work,rows).ok,'correct work rejected '+a+op+b);
@@ -45,7 +45,7 @@ assert(Object.keys(E.read(farInk,8).main).length===0,'default six-column behavio
 assert(E.columns(buildLesson('*',99999,99999))>=12,'ten-digit product clipped');
 let rejected=0;for(const args of [['/',1,0],['-',1,2],['+',100000,1],['*',-1,1]])try{buildLesson(...args);}catch{rejected++;}
 assert(rejected===4,'invalid equations allowed');
-log('PASS: '+worksheets+' worksheets, '+checks+' checks (all operations, five-digit operands, intermediate work, carries, wide recognition, both grid placements).');
+log('PASS: '+worksheets+' worksheets, '+checks+' checks (all operations, five-digit operands, intermediate work, carries, wide recognition, all grid placements).');
 '''
 with tempfile.TemporaryDirectory(prefix='hissan-calculator-') as directory:
     path = Path(directory) / 'test.js'

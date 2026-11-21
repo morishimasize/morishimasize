@@ -16,8 +16,21 @@ function readGlyph(strokes,digitsOnly=false){
  // Keep close calls editable in the review instead of guessing from the exercise.
  return best.score<.18&&second.score-best.score>=.012&&!(best.text==='1'&&input.ratio>1.05)?best.text:'?';
 }
-function readNote(strokes){if(!strokes.length)return '';const ordered=strokes.map(s=>({s,b:bounds([s])})).sort((a,b)=>a.b.x0-b.b.x0);const groups=[];for(const o of ordered){const last=groups[groups.length-1];if(last&&o.b.x0<=last.x1+3){last.strokes.push(o.s);last.x1=Math.max(last.x1,o.b.x1);}else groups.push({strokes:[o.s],x1:o.b.x1});}return groups.map(g=>readGlyph(g.strokes,true)).join('');}
-function read(strokes,rows,cols=COLS,{digitsOnly=false}={}){const main={},notes={},lines=[],brackets=[],groups={};
+// Committed strokes are immutable. Reuse scores for untouched glyphs on each live scan.
+function createInkReader(){
+ const scores=new WeakMap();
+ function readCached(strokes,digitsOnly){
+  const first=strokes[0],previous=scores.get(first);
+  if(previous&&previous.digitsOnly===digitsOnly&&previous.strokes.length===strokes.length&&
+    strokes.every((stroke,index)=>stroke===previous.strokes[index]))return previous.text;
+  const text=readGlyph(strokes,digitsOnly);
+  scores.set(first,{strokes,digitsOnly,text});
+  return text;
+ }
+ return (strokes,rows,cols)=>read(strokes,rows,cols,{digitsOnly:true},readCached);
+}
+function readNote(strokes,readDigit){if(!strokes.length)return '';const ordered=strokes.map(s=>({s,b:bounds([s])})).sort((a,b)=>a.b.x0-b.b.x0);const groups=[];for(const o of ordered){const last=groups[groups.length-1];if(last&&o.b.x0<=last.x1+3){last.strokes.push(o.s);last.x1=Math.max(last.x1,o.b.x1);}else groups.push({strokes:[o.s],x1:o.b.x1});}return groups.map(g=>readDigit(g.strokes,true)).join('');}
+function read(strokes,rows,cols=COLS,{digitsOnly=false}={},readDigit=readGlyph){const main={},notes={},lines=[],brackets=[],groups={};
  const items=strokes.filter(s=>s.length>=2).map(stroke=>{const b=bounds([stroke]),w=b.x1-b.x0,h=b.y1-b.y0;return {stroke,b,w,h,cx:(b.x0+b.x1)/2/CELL,cy:(b.y0+b.y1)/2/CELL};});
  // A short horizontal cap can belong to a large digit (notably a two-stroke 5).
  // Attach it before deciding that it is a rule or a tiny carry/borrow digit.
@@ -45,12 +58,12 @@ function read(strokes,rows,cols=COLS,{digitsOnly=false}={}){const main={},notes=
   const small=!anchor&&h<CELL*.33&&(b.y1/CELL-r)<.37;
   const k=key(r,c),g=groups[k]||(groups[k]={main:[],note:[]});g[small?'note':'main'].push(stroke);
  }
- for(const [k,g]of Object.entries(groups)){if(g.main.length)main[k]=readGlyph(g.main,digitsOnly);if(g.note.length)notes[k]=readNote(g.note);}
+ for(const [k,g]of Object.entries(groups)){if(g.main.length)main[k]=readDigit(g.main,digitsOnly);if(g.note.length)notes[k]=readNote(g.note,readDigit);}
  return {main,notes,lines,brackets};
 }
 function divisionShift(model){return model.op==='/'?Math.max(0,String(model.b).length-2):0;}
 function placement(model,work){
- if(!model.rightAligned)return work;
+ if(!model.rightAligned||model.compactPaper)return work;
  const rightEdge=model.op==='/'?String(model.a).length+3+divisionShift(model):model.columns.length+1;
  const shift=Math.max(0,COLS-1-rightEdge);
  return shift?shifted(work,0,shift):work;
@@ -83,7 +96,12 @@ function gradeWork(model,work,rows){
 function translateKey(k,dr,dc){const [r,c]=k.split(':').map(Number);return key(r+dr,c+dc);}
 function shifted(e,dr,dc){return {main:Object.fromEntries(Object.entries(e.main).map(([k,v])=>[translateKey(k,dr,dc),v])),notes:Object.fromEntries(Object.entries(e.notes).map(([k,v])=>[translateKey(k,dr,dc),v])),lines:e.lines.map(l=>({...l,row:l.row+dr,start:l.start+dc,end:l.end+dc})),brackets:e.brackets.map(b=>({row:b.row+dr,col:b.col+dc}))};}
 // Grow the worksheet to fit arbitrary calculator inputs, including ten-digit products.
-function columns(model){const e=expected(model),g=given(model);return Math.max(COLS,...Object.keys({...e.main,...e.notes,...g.main}).map(k=>Number(k.split(':')[1])+1),...e.lines.map(l=>Math.ceil(l.end)),...g.lines.map(l=>Math.ceil(l.end)+(model.rightAligned?1:0)));}
+function columns(model){const e=expected(model),g=given(model);return Math.max(model.compactPaper?4:COLS,...Object.keys({...e.main,...e.notes,...g.main}).map(k=>Number(k.split(':')[1])+1),...e.lines.map(l=>Math.ceil(l.end)),...g.lines.map(l=>Math.ceil(l.end)+(model.rightAligned?1:0)));}
+function rows(model){
+ const lastCell=Math.max(...Object.values(model.finalCells).map(cell=>cell.row));
+ if(!model.compactPaper)return Math.max(8,lastCell+4);
+ return Math.max(5,lastCell+3,...expected(model).lines.map(line=>line.row+1));
+}
 function grade(model,recognized,rows,anchored=false){const e=expected(model),cols=columns(model);let best=null;
 for(let dr=-1;dr<rows;dr++)for(let dc=-3;dc<cols;dc++){if(anchored&&(dr!==0||dc!==0))continue;const t=shifted(e,dr,dc);if(Object.keys(t.main).some(k=>{const [r,c]=k.split(':').map(Number);return r<0||r>=rows||c<0||c>=cols;}))continue;let good=0,bad=0,missing=0;for(const [k,v]of Object.entries(t.main)){if(recognized.main[k]===v)good++;else if(!recognized.main[k])missing++;else bad++;}const score=good*3-bad*2-missing;if(!best||score>best.score)best={...t,score,dr,dc};}
 if(!best)return {ok:false,issues:[{kind:'layout',message:'かく ばしょを もういちど たしかめよう。'}],checks:[]};
@@ -93,5 +111,5 @@ for(const l of best.lines){const segments=recognized.lines.filter(a=>a.row===l.r
 for(const b of best.brackets){const ok=recognized.brackets.some(x=>x.row===b.row&&x.col===b.col);checks.push({kind:'bracket',...b,ok});if(!ok)issues.push({kind:'bracket',...b,message:'わりざんの かたちを たしかめよう。'});}
 return {ok:issues.length===0,issues,checks,offset:{row:best.dr,col:best.dc}};
 }
-root.NotebookEngine={CELL,COLS,columns,read,readGlyph,expected,given,gradeWork,grade,bounds,key};
+root.NotebookEngine={CELL,COLS,columns,rows,read,createInkReader,readGlyph,expected,given,gradeWork,grade,bounds,key};
 })(globalThis);

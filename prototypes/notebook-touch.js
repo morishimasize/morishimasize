@@ -9,11 +9,13 @@ function touchPaperHTML(){
    <div id="page-rail-left" class="touch-page-rail" role="region" aria-label="ページを うごかす ひだりの はし"><span aria-hidden="true">↕</span></div>
    <div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート">
     <div id="touch-stage" class="touch-stage paper-grid" style="width:${width}px;height:${height}px">
+     <div id="ink-questions" aria-hidden="true"></div>
      <canvas id="paper" width="${width}" height="${height}" aria-label="${lesson.equation} の ひっさんノート。1ぽんの ゆびで かく"></canvas>
     </div>
    </div>
    <div id="page-rail-right" class="touch-page-rail" role="region" aria-label="ページを うごかす みぎの はし"><span aria-hidden="true">↕</span></div>
   </div>
+  <span id="ink-feedback" class="notebook-screen-reader" role="status"></span>
   <span id="touch-scale" class="notebook-screen-reader" aria-live="polite">ぜんたい</span>
  </div>`;
 }
@@ -78,10 +80,14 @@ function attachTouchDrawing(canvas){
   paint:v=>{stage.style.transform=`translate(${v.x}px,${v.y}px) scale(${v.factor})`;$('touch-scale').textContent=v.scale<1.01?'ぜんたい':`${Math.round(v.scale*100)}%`;},
   preview:s=>renderStrokes(canvas,tool==='pen'?s:null),busy:v=>{drawing=v;},
   commit:s=>{if(epoch!==version)return;
+   let inkChanged=false;
    if(tool==='line'){toggleWorkRule(Math.round(s[s.length-1][1]/72));tool='pen';}
-   else if(tool==='erase'){eraseWorkAt(s[s.length-1]);}
-   else if(s.length>1){rememberWork();strokes.push(s);}
-   updateWritingPaper();
+   else if(tool==='erase'){
+    const previousInk=strokes;
+    eraseWorkAt(s[s.length-1]);
+    inkChanged=previousInk!==strokes;
+   }else if(s.length>1){rememberWork();strokes.push(s);inkChanged=true;}
+   updateWritingPaper(inkChanged);
   }
  });
  for(const id of ['page-rail-left','page-rail-right'])attachPageDragRail($(id),delta=>window.scrollBy(0,delta));

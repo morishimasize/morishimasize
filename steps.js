@@ -159,17 +159,23 @@ function lessonBoardHTML(model,snapshot,overview){
   return html+'</div>';
 }
 
+let lessonResizeObserver;
 function showLesson(model){
   activeLesson=model;lessonIndex=0;lessonOverview=false;
   document.getElementById('hp').innerHTML=`<div class="hdr" id="lesson-equation"></div>`+
     `<section class="answer-book notebook" aria-label="けいさんの ノート"><div class="answer-layout">`+
-    `<section class="hp-grid-wrap"><h2 class="panel-title">ひっさん</h2><div class="lesson-board-viewport" id="lesson-board-viewport" tabindex="0" role="region" aria-label="ひっさん。はみでるときは うごかせるよ"><div id="lesson-board-content"></div></div></section>`+
+    `<section class="hp-grid-wrap" aria-label="ひっさん"><div class="lesson-board-viewport" id="lesson-board-viewport" tabindex="0" role="region" aria-label="ひっさん。はみでるときは うごかせるよ"><div id="lesson-board-content"></div></div></section>`+
     `<section class="steps-wrap"><div id="lesson-explanation" aria-live="polite" aria-atomic="true"></div></section></div>`+
     `<div class="lesson-progress" aria-hidden="true"><span id="lesson-progress-fill"></span></div>`+
     `<div class="lesson-options"><button id="lesson-overview" onclick="toggleLessonOverview()">ぜんぶ みる</button><button onclick="restartLesson()">さいしょから</button></div>`+
-    `<div id="lesson-answer"></div></section>`+
+    `</section>`+
     `<nav class="lesson-controls" aria-label="てじゅんを すすめる"><button class="lesson-prev" id="lesson-prev" onclick="previousLesson()">まえへ</button><span id="lesson-count"></span><button class="lesson-next" id="lesson-next" onclick="nextLesson()">つぎへ</button></nav>`;
   renderLesson();
+  if(typeof ResizeObserver==='function'){
+    lessonResizeObserver?.disconnect();
+    lessonResizeObserver=new ResizeObserver(fitLessonBoard);
+    lessonResizeObserver.observe(document.getElementById('lesson-board-viewport'));
+  }
 }
 function renderLesson(){
   if(!activeLesson)return;
@@ -187,15 +193,34 @@ function renderLesson(){
   document.getElementById('lesson-next').textContent=last?'もういちど':'つぎへ';
   document.getElementById('lesson-overview').textContent=lessonOverview?'ひとつずつ みる':'ぜんぶ みる';
   document.getElementById('lesson-progress-fill').style.width=`${lessonOverview?100:100*(lessonIndex+1)/model.steps.length}%`;
-  document.getElementById('lesson-answer').innerHTML=lessonOverview||last?`<div class="answer-ribbon"><span>こたえは</span><strong class="answer-value">${lessonEscape(model.answer)}</strong><span class="answer-star" aria-hidden="true">★</span></div>`:'';
-  if(typeof requestAnimationFrame==='function')requestAnimationFrame(keepLessonWorkVisible);
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(fitLessonBoard);
 }
-function keepLessonWorkVisible(){
-  const viewport=document.getElementById('lesson-board-viewport');if(!viewport)return;
+function fitLessonBoard(){
+  const viewport=document.getElementById('lesson-board-viewport');
+  if(!viewport?.clientWidth||!viewport.clientHeight)return;
+  const board=viewport.querySelector('.lesson-board');
+  if(!board)return;
+  const width=parseFloat(board.style.width),height=parseFloat(board.style.height);
+  const zoom=Math.max(.56,Math.min(1,viewport.clientWidth/width,viewport.clientHeight/height));
+  board.style.zoom=String(zoom);
+  keepLessonWorkVisible(viewport);
+}
+function keepLessonWorkVisible(viewport){
   const written=[...viewport.querySelectorAll('[data-current="true"]')];
   const targets=written.length?written:[...viewport.querySelectorAll('.lesson-cell.is-focus')];
   const current=targets.sort((a,b)=>Number(b.dataset.row)-Number(a.dataset.row))[0];
-  if(current){viewport.scrollTo({top:Math.max(0,current.offsetTop-viewport.clientHeight/2+29),left:Math.max(0,current.offsetLeft-viewport.clientWidth/2+current.clientWidth/2),behavior:'auto'});}
+  if(!current){
+    viewport.scrollTo(0,0);
+    return;
+  }
+  const frame=viewport.getBoundingClientRect(),cell=current.getBoundingClientRect();
+  if(cell.top<frame.top||cell.bottom>frame.bottom||cell.left<frame.left||cell.right>frame.right){
+    viewport.scrollTo({
+      top:viewport.scrollTop+cell.top-frame.top+(cell.height-viewport.clientHeight)/2,
+      left:viewport.scrollLeft+cell.left-frame.left+(cell.width-viewport.clientWidth)/2,
+      behavior:'auto'
+    });
+  }
 }
 function previousLesson(){if(activeLesson&&!lessonOverview&&lessonIndex>0){lessonIndex--;renderLesson();}}
 function nextLesson(){if(activeLesson&&!lessonOverview){lessonIndex=lessonIndex===activeLesson.steps.length-1?0:lessonIndex+1;renderLesson();}}

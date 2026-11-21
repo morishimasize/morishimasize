@@ -148,3 +148,58 @@ body:not(.answer-mode) {
   #input-card .number-field label { margin-bottom:3px; font-size:13px; }
   #input-card #current-op { padding-top:19px; }
 }
+
+body.answer-mode {
+  --answer-top:max(10px,env(safe-area-inset-top));
+  --answer-bottom:max(10px,env(safe-area-inset-bottom));
+  padding-top:var(--answer-top);
+  padding-bottom:var(--answer-bottom);
+}
+body.answer-mode #app {
+  align-items:stretch;
+  gap:8px;
+  grid-template-rows:auto minmax(195px,1fr) auto;
+  height:calc(100dvh - var(--answer-top) - var(--answer-bottom));
+  min-height:335px;
+}
+body.answer-mode .back-btn { align-self:center; }
+body.answer-mode .hdr { min-width:0; display:grid; place-items:center; overflow-wrap:anywhere; font-size:clamp(17px,3vw,28px); text-align:center; }
+body.answer-mode .answer-book {
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto auto;
+  padding:12px 12px 8px 22px;
+}
+body.answer-mode .answer-book::after { display:none; }
+.answer-layout { min-height:0; align-items:stretch; gap:8px; }
+.answer-layout > * { min-height:0; padding:0; border:none; }
+.answer-layout .steps-wrap { overflow:auto; }
+.lesson-board-viewport { height:100%; max-height:none; padding:0; }
+.lesson-board { margin-inline:auto; }
+.lesson-explanation { padding:8px 11px; border-radius:17px; }
+.lesson-heading { margin-bottom:5px; gap:7px; }
+.lesson-heading h2 { font-size:clamp(17px,3.6vw,24px); }
+.lesson-heading p { font-size:clamp(12px,2.5vw,17px); margin:0; }
+.lesson-badge { flex-basis:32px; height:32px; font-size:16px; }
+.lesson-math { padding:3px 7px; font-size:clamp(17px,4vw,26px); line-height:1.35; }
+.lesson-description { font-size:clamp(14px,3.4vw,19px); line-height:1.45; margin:5px 0 0; }
+.lesson-progress { width:100%; margin:4px auto 0; }
+.lesson-options { margin-top:3px; gap:7px; }
+.lesson-options button { min-height:48px; font-size:14px; padding:4px 12px; }
+.lesson-controls {
+  position:static;
+  transform:none;
+  grid-column:1 / -1;
+  grid-row:3;
+  justify-self:center;
+  width:100%;
+  padding:4px 7px;
+}
+.lesson-controls button { min-height:56px; font-size:18px; }
+@media (max-width:759px) {
+  .answer-layout { grid-template-rows:minmax(72px,1fr) auto; }
+  .answer-layout .steps-wrap { max-height:40dvh; }
+}
+@media (min-width:620px) and (max-width:759px) and (orientation:landscape) {
+  .answer-layout { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:minmax(0,1fr); }
+  .answer-layout .steps-wrap { max-height:none; }
+}

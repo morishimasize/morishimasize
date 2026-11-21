@@ -17,8 +17,12 @@ const testQuery={touch:'0'};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
 class ResizeObserver{constructor(fn){} observe(){} disconnect(){}}
 const context=new Proxy({}, {get(){return ()=>{};}});
-const nodes=new Map();let appHTML='';
-function node(id){if(!nodes.has(id)){const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
+const nodes=new Map();let appHTML='',timerId=0;
+const timers=new Map();
+function setTimeout(fn){const id=++timerId;timers.set(id,fn);return id;}
+function clearTimeout(id){timers.delete(id);}
+function flushTimers(){const pending=[...timers.values()];timers.clear();for(const fn of pending)fn();}
+function node(id){if(!nodes.has(id)){let nestedHTML='';const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:nestedHTML;},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}else nestedHTML=html;}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
 const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||appHTML.includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of appHTML.matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
@@ -145,6 +149,27 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
 `)(storage,check);
 check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');
+const easyHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'+',a:'1',b:'2'};");
+new Function('storage','check',easyHarness+SOURCE+`
+ check(columnCount()===4&&rowCount()===5,'easy worksheet did not get a compact grid');
+ check(appHTML.indexOf('class="notebook-dock"')<appHTML.indexOf('id="clear"')&&appHTML.indexOf('id="clear"')<appHTML.indexOf('id="read"'),'read/clear not in bottom dock');
+ const canvas=$('touch-viewport');
+ const event=(id,x,y)=>({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
+ const state=touchViewState,factor=Math.min(canvas.clientWidth/$('paper').width,canvas.clientHeight/$('paper').height);
+ const inkEvent=(id,x,y)=>event(id,state.x+x*factor,state.y+y*factor);
+ canvas.onpointerdown(inkEvent(1,153,250));canvas.onpointermove(inkEvent(1,181,264));canvas.onpointerup(inkEvent(1,206,269));
+ check(phase==='write'&&timers.size===1,'live reading was not scheduled on release');
+ flushTimers();
+ check($('ink-questions').innerHTML.includes('data-cell="3:2"')&&recognized===null&&result===null,'ambiguous ink not shown before reading or was graded');
+ $('undo-bottom').onclick();flushTimers();
+ check(!$('ink-questions').innerHTML,'question remained after undo');
+ canvas.onpointerdown(inkEvent(2,180,248));canvas.onpointerup(inkEvent(2,180,275));flushTimers();
+ check(!$('ink-questions').innerHTML,'a clear 1 was marked as ambiguous');
+ $('read').onclick();check(phase==='review'&&recognized.main['3:2']==='1','review disagreed with live recognition');
+ $('show-original').onclick();check($('review-columns').dataset.view==='original','phone cannot switch to original ink');
+ $('show-reading').onclick();check($('review-columns').dataset.view==='reading','phone cannot return to reading');
+`)(storage,check);
+
 
 // Use the normal game URL with no opt-in parameter; exercise saves across reloads.
 const normalHarness=HARNESS.replace("const testQuery={touch:'0'};",'const testQuery={};');
@@ -162,13 +187,13 @@ runNormal(`
  touchViewState.scale=3;touchViewState.x=-50;$('start').onclick();
  check($('touch-viewport')&&!$('zoom-row')&&!$('row-dialog'),'old row dialog is still the normal entry');
  check(touchViewState.scale===1,'new problem inherited old zoom');
- check(savedGame.rightAligned&&E.given(lesson).main['1:4']==='7','new game did not store right-aligned placement');
+ check(savedGame.rightAligned&&savedGame.compactPaper&&E.given(lesson).main['1:3']==='7'&&columnCount()===5&&rowCount()===5,'new game did not store right-aligned placement');
  const event=(id,x,y)=>({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
  $('touch-viewport').onpointerdown(event(21,300,245));$('touch-viewport').onpointermove(event(21,300,280));$('touch-viewport').onpointerup(event(21,300,280));
  toggleWorkRule(5);save();check(savedGame.strokes.length===1&&savedGame.rules[0].row===5,'normal game ink/rule not saved');
 `);
 runNormal(`
- $('resume').onclick();check(fingerNotebook&&strokes.length===1&&extraLines[0].row===5&&lesson.rightAligned,'normal game did not restore right-aligned ink and rules');
+ $('resume').onclick();check(fingerNotebook&&strokes.length===1&&extraLines[0].row===5&&lesson.rightAligned&&lesson.compactPaper,'normal game did not restore right-aligned ink and rules');
  $('erase').onclick();const e={pointerId:22,button:0,clientX:200,clientY:360,preventDefault(){}};
  $('touch-viewport').onpointerdown(e);$('touch-viewport').onpointerup(e);
  check(savedGame.rules.length===0,'normal game eraser not saved');

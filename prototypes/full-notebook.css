@@ -35,11 +35,10 @@
 
 @media(max-width:600px){.row-ink-tools button{font-size:13px;padding:8px 4px}}
 
-/* The viewport is as tall as the worksheet, so extra rows do not shrink the grid. */
+/* Keep the whole worksheet between the top and bottom controls. */
 .touch-notebook { position:relative; border:1px solid #b8d5e3; border-radius:10px; overflow:clip; background:#fff; }
 .touch-viewport {
   min-width:0;
-  aspect-ratio:var(--cols) / var(--rows);
   overflow:hidden;
   position:relative;
   touch-action:none;
@@ -52,14 +51,11 @@
 
 /* Keep page scrolling available on both sides, including when the paper is zoomed. */
 .writing-card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.touch-paper-frame{display:grid;grid-template-columns:48px minmax(0,1fr) 48px}
+.touch-paper-frame{height:100%;display:grid;grid-template: minmax(0,1fr) / 48px minmax(0,1fr) 48px}
 .touch-page-rail{background:#e6e9ed;touch-action:pan-y;cursor:grab;display:flex;justify-content:center;align-items:center;color:#78838e;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .touch-page-rail:active{cursor:grabbing;background:#dce2e8}
 .touch-page-rail span {
-  position:sticky;
-  top:44svh;
-  align-self:flex-start;
-  margin-top:12px;
+  align-self:center;
   pointer-events:none;
   font-size:24px;
   line-height:1;
@@ -78,15 +74,22 @@
 }
 
 .notebook-writing {
-  padding: max(8px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right))
-    max(12px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
+  --notebook-top:max(6px,env(safe-area-inset-top));
+  --notebook-bottom:max(6px,env(safe-area-inset-bottom));
+  padding:var(--notebook-top) max(6px,env(safe-area-inset-right))
+    var(--notebook-bottom) max(6px,env(safe-area-inset-left));
 }
 .notebook-writing .shell { max-width:920px; }
 .notebook-writing .shell > header, .notebook-writing .shell > footer { display:none; }
 .notebook-writing .save-status:not(.save-failed) { padding:0; margin:0; position:absolute; clip-path:inset(50%); }
-.notebook-back { background:transparent; border-color:transparent; padding:8px 12px; margin-bottom:4px; }
+.notebook-back { background:transparent; border-color:transparent; padding:4px 8px; min-height:44px; font-size:14px; white-space:nowrap; }
 .card.notebook-workspace {
-  padding:6px;
+  display:grid;
+  grid-template-rows:auto minmax(90px,1fr) auto;
+  height:calc(100svh - var(--notebook-top) - var(--notebook-bottom));
+  height:calc(100dvh - var(--notebook-top) - var(--notebook-bottom));
+  min-height:310px;
+  padding:5px 6px;
   border:2px solid #efcc47;
   border-radius:17px;
   background:#fff;
@@ -106,7 +109,7 @@
   justify-content:center;
   gap:3px;
   min-width:0;
-  min-height:clamp(50px,9vw,68px);
+  min-height:clamp(48px,7.5vw,62px);
   padding:4px 0;
   border:2px solid #e0dedb;
   border-radius:12px;
@@ -120,24 +123,47 @@
 .ink-toolbar svg { width:clamp(21px,4vw,30px); height:clamp(21px,4vw,30px); fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .ink-toolbar button[aria-pressed="true"] { background:#e2f2fa; border-color:#3480a6; box-shadow:inset 0 -3px 0 #afd7eb; color:#284e64; }
 .notebook-dock {
-  position:sticky;
-  bottom:env(safe-area-inset-bottom,0px);
-  z-index:4;
+  position:relative;
+  min-width:0;
   padding-top:3px;
-  background:#fff;
-  box-shadow:0 -1px 0 #dbe3e7;
 }
 .notebook-actions {
   display:flex;
-  flex-wrap:wrap-reverse;
   align-items:center;
   justify-content:space-between;
   gap:8px;
-  padding:6px 2px 8px;
+  padding:2px 1px 3px;
 }
-.notebook-actions #clear { color:#675b61; border-color:#ded9dc; font-size:14px; }
-.notebook-actions #read { min-width:min(42%,180px); font-size:18px; }
-.notebook-workspace .status { margin:6px 0 0; padding:8px 12px; }
+.notebook-actions #clear { color:#675b61; border-color:#ded9dc; font-size:13px; padding:7px 9px; white-space:nowrap; }
+.notebook-actions #read { min-width:min(42%,180px); padding-inline:10px; font-size:17px; white-space:nowrap; }
+.notebook-workspace .status { position:absolute; bottom:100%; left:6px; right:6px; margin:0; padding:6px 12px; pointer-events:none; }
+.ink-question {
+  position:absolute;
+  z-index:1;
+  top:calc(var(--row) * 72px + 3px);
+  left:calc(var(--col) * 72px + 46px);
+  display:grid;
+  place-items:center;
+  width:23px;
+  height:23px;
+  border:2px solid #996512;
+  border-radius:50%;
+  background:#fff0ac;
+  color:#744701;
+  font-size:19px;
+  font-weight:900;
+  line-height:1;
+  pointer-events:none;
+}
+.ink-question.notes { left:calc(var(--col) * 72px + 3px); }
+@media (min-width:630px) and (max-height:640px) {
+  .notebook-head, .notebook-dock { display:grid; align-items:center; gap:6px; }
+  .notebook-head { grid-template-columns:auto minmax(0,1fr); }
+  .notebook-dock { grid-template-columns:minmax(0,1fr) auto; }
+  .notebook-dock .ink-toolbar, .notebook-head .ink-toolbar { width:100%; }
+  .notebook-dock .notebook-actions { gap:5px; }
+  .notebook-dock #read { min-width:0; }
+}
 @media (max-width:570px) {
   .touch-paper-frame { grid-template-columns:32px minmax(0,1fr) 32px; }
   .touch-page-rail span { font-size:19px; }
@@ -145,4 +171,77 @@
 @media (max-width:335px) {
   .ink-toolbar { gap:1px; }
   .card.notebook-workspace { padding-inline:5px; }
+}
+
+.game-setup { max-width:760px; margin-inline:auto; }
+.game-setup .example-row { margin:10px 0; }
+.game-setup .op-tabs { margin:12px 0; }
+.game-setup .start { margin-top:4px; }
+.game-setup .resume-card { margin-bottom:12px; padding:8px; }
+.game-setup .resume-card p { display:none; }
+.game-setup .bottom-nav { margin-bottom:0; }
+.notebook-review .shell > header, .notebook-review .shell > footer { display:none; }
+.notebook-review .save-status:not(.save-failed) { position:absolute; margin:0; padding:0; clip-path:inset(50%); }
+.review-card {
+  display:flex;
+  flex-direction:column;
+  min-height:360px;
+  height:calc(100dvh - 46px);
+  padding:10px 12px;
+}
+.review-card .equation { font-size:clamp(20px,4vw,32px); }
+.review-card .help { padding:4px 8px; margin:3px 0; }
+.review-card .toolbar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; margin:5px 0; }
+.review-card .toolbar button { font-size:clamp(11px,2vw,14px); padding:4px 2px; }
+.review-view-switch { display:none; }
+.review-card .review-columns { flex:1; min-height:120px; }
+.review-card .review-columns > div { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.review-card .review-heading { margin:0 0 3px; font-size:16px; }
+.review-card .paper-area { min-height:0; flex:1; }
+.review-card .paper-scroll { container-type:size; height:100%; padding:1px 2px; }
+.review-card .paper-scroll .canvas-wrap, .review-card .paper-scroll .review-grid {
+  width:min(100%,calc(100cqh * var(--cols) / var(--rows)));
+  min-width:calc(var(--cols) * 26px);
+}
+.review-card .review-cell input.main { font-size:clamp(16px,36cqw / var(--cols),35px); }
+.review-card .grade-controls { margin-top:5px; padding:4px; bottom:0; }
+.review-card .grade-controls + .sub { display:none; }
+.review-card .status:not(:empty) { margin:4px 0; padding:6px 9px; max-height:min(142px,23dvh); overflow:auto; }
+.review-card .status h2, .review-card .status p { margin:0; }
+@media (max-width:700px) and (orientation:portrait) {
+  .review-view-switch { display:flex; gap:4px; margin:2px 0 4px; }
+  .review-view-switch button { flex:1; padding:4px; font-size:14px; }
+  .review-view-switch button[aria-pressed="true"] { background:#e2f0f7; border:2px solid #549bbd; }
+  .review-card .review-heading { position:absolute; clip-path:inset(50%); }
+  .review-card .review-columns[data-view="reading"] .original-view,
+  .review-card .review-columns[data-view="original"] .reading-view { display:none; }
+}
+@media (max-width:700px) and (orientation:landscape) {
+  .review-card { min-height:325px; }
+  .review-view-switch { display:none; }
+  .review-card .review-columns { grid-template-columns:1fr 1fr; }
+  .review-card .review-columns[data-view] > div { display:flex; }
+}
+
+@media (orientation:landscape) and (max-height:500px) {
+  .notebook-review { padding-block:10px; }
+  .review-card { height:calc(100dvh - 20px); min-height:315px; }
+}
+
+.reward-card .progress-picture { width:min(640px,100%,57dvh); margin:10px auto; }
+.reward-card .actions { margin:8px 0 0; }
+.reward-card > p { margin:4px 0; }
+@media (orientation:landscape) and (max-height:560px) {
+  body:has(.game-setup), body:has(.reward-card) { padding-block:8px; }
+  body:has(.game-setup) header, body:has(.reward-card) header { margin-bottom:5px; }
+  body:has(.game-setup) footer, body:has(.reward-card) footer,
+  body:has(.game-setup) .save-status:not(.save-failed),
+  body:has(.reward-card) .save-status:not(.save-failed) { display:none; }
+  .game-setup, .reward-card { padding:9px 12px; }
+  .game-setup .op-tabs { margin:7px 0; }
+  .game-setup .op-tabs button { padding:4px; }
+  .game-setup .example-row { margin:5px 0; }
+  .game-setup .bottom-nav { margin:6px 0 0; }
+  .game-setup .resume-card { padding:3px; margin-bottom:4px; }
+  .reward-card .progress-picture { width:min(640px,100%,48dvh); }
 }

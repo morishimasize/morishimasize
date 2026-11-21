@@ -23,3 +23,25 @@ h2{font-size:23px;text-align:center;margin:0 0 22px;font-weight:900}
 [hidden]{display:none!important}
 @media(min-width:701px){body{display:grid;align-content:center;padding-top:50px;padding-bottom:32px}.brand{margin-bottom:34px}.notebook{padding:32px 42px 24px 52px}h2{font-size:26px;margin-bottom:25px}.choice{min-height:130px;padding:18px 24px}.words strong{font-size:29px}.words>span{font-size:16px}.game br{display:none}.pencil{width:64px;height:96px}.strawberry{font-size:50px}.choices{gap:22px}}
 @media(max-width:400px){body{padding:28px 12px 16px}.brand{min-height:72px;margin-bottom:19px;padding:0 25px}h1{font-size:26px;padding:10px 13px}.strawberry{font-size:28px;left:-2px}.pencil{width:37px;height:56px;right:-4px;top:14px}.notebook{padding:24px 15px 16px 25px;border-width:5px}.notebook::before{left:-9px;width:23px;background-size:23px 67px}h2{font-size:21px;margin-bottom:18px}.choice{gap:10px;padding:14px 10px;min-height:108px;border-radius:21px}.choice-icon{width:45px;height:50px;font-size:27px;border-radius:14px}.words strong{font-size:21px}.words>span{font-size:12px}.arrow{font-size:22px}.choices{gap:17px}.encouragement{font-size:11px;margin-top:24px}}
+
+@media (max-height:710px) {
+  body { padding-top:max(22px,env(safe-area-inset-top)); padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+  body::before { height:12px; }
+  .brand { min-height:60px; margin:4px 0 16px; }
+  .brand h1 { padding-block:7px; }
+  .notebook { padding-block:16px 12px; }
+  .notebook h2 { margin-bottom:10px; font-size:21px; }
+  .choices { gap:12px; }
+  .choice { min-height:78px; padding-block:8px; }
+  .choice-icon { height:46px; width:46px; font-size:26px; }
+  .game br, .encouragement { display:none; }
+}
+@media (min-width:620px) and (orientation:landscape) and (max-height:530px) {
+  .home { max-width:850px; }
+  .choices { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .choice { flex-direction:column; text-align:center; min-height:120px; gap:5px; padding:8px 4px; }
+  .words strong { font-size:clamp(15px,2.6vw,24px); }
+  .words > span { font-size:12px; }
+  .words .resume-hint { margin-inline:auto; }
+  .choice .arrow { display:none; }
+}
