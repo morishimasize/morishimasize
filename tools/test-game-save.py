@@ -13,7 +13,7 @@ if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
 source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/full-notebook.js'])
 harness = r'''
-const testQuery={};
+const testQuery={touch:'0'};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
 class ResizeObserver{constructor(fn){} observe(){} disconnect(){}}
 const context=new Proxy({}, {get(){return ()=>{};}});
@@ -113,13 +113,13 @@ values.set('hissan-full-notebook-v2','broken JSON');
 run(`check(progress===5&&savedGame===null,'corrupt record did not fall back safely');`);
 // Calculator mode must leave game progress and the notebook untouched.
 const before=JSON.stringify([...values]);
-const calculatorHarness=HARNESS.replace('const testQuery={};',"const testQuery={mode:'calculator',op:'+',a:'27',b:'15'};");
+const calculatorHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'+',a:'27',b:'15'};");
 new Function('storage','check',calculatorHarness+SOURCE+`\nsave();check(calculatorMode&&phase==='write','calculator initialization');`)(storage,check);
 check(JSON.stringify([...values])===before,'calculator modified game saves');
 
-const fingerHarness=HARNESS.replace('const testQuery={};',"const testQuery={mode:'calculator',op:'*',a:'23',b:'45',touch:'1'};");
+const fingerHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'*',a:'23',b:'45'};");
 new Function('storage','check',fingerHarness+SOURCE+`\n
- check(touchTrial&&phase==='write'&&$('touch-reset'),'finger trial initialization');
+ check(fingerNotebook&&phase==='write'&&$('touch-reset'),'finger trial initialization');
  const down=(id,x,y)=>$('touch-viewport').onpointerdown({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
  const move=(id,x,y)=>$('touch-viewport').onpointermove({pointerId:id,clientX:x,clientY:y,preventDefault(){}});
  const up=id=>$('touch-viewport').onpointerup({pointerId:id,preventDefault(){}});
@@ -139,6 +139,33 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
 `)(storage,check);
 check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');
+
+// Use the normal game URL with no opt-in parameter; exercise saves across reloads.
+const normalHarness=HARNESS.replace("const testQuery={touch:'0'};",'const testQuery={};');
+function runNormal(code){new Function('storage','check',normalHarness+SOURCE+'\n'+code)(storage,check);}
+runNormal(`
+ check(fingerNotebook,'normal game did not enable finger notebook');
+ touchViewState.scale=3;touchViewState.x=-50;$('start').onclick();
+ check($('touch-viewport')&&!$('zoom-row')&&!$('row-dialog'),'old row dialog is still the normal entry');
+ check(touchViewState.scale===1,'new problem inherited old zoom');
+ const event=(id,x,y)=>({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
+ $('touch-viewport').onpointerdown(event(21,300,245));$('touch-viewport').onpointermove(event(21,300,280));$('touch-viewport').onpointerup(event(21,300,280));
+ toggleWorkRule(5);save();check(savedGame.strokes.length===1&&savedGame.rules[0].row===5,'normal game ink/rule not saved');
+`);
+runNormal(`
+ $('resume').onclick();check(fingerNotebook&&strokes.length===1&&extraLines[0].row===5,'normal game did not restore old-format ink and rules');
+ $('erase').onclick();const e={pointerId:22,button:0,clientX:200,clientY:360,preventDefault(){}};
+ $('touch-viewport').onpointerdown(e);$('touch-viewport').onpointerup(e);
+ check(savedGame.rules.length===0,'normal game eraser not saved');
+ $('undo').onclick();check(savedGame.rules[0].row===5,'normal game undo not saved');
+ readAll();recognized=E.expected(lesson);for(const k of Object.keys(E.given(lesson).main))delete recognized.main[k];review();const count=progress;$('grade').onclick();
+ check(result.ok&&credited&&progress===count+1,'normal game reward credit failed');
+`);
+runNormal(`
+ $('resume').onclick();const count=progress;check(result.ok&&phase==='review','normal graded review not restored');
+ $('grade').onclick();check(progress===count,'normal game regrade duplicated credit');
+ $('back-write').onclick();check($('touch-viewport')&&strokes.length===1,'normal review return lost handwriting');
+`);
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''
 script = 'const SOURCE='+json.dumps(source)+';\nconst HARNESS='+json.dumps(harness)+';\n'+tests

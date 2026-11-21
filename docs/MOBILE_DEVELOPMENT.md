@@ -9,6 +9,10 @@
 - 公開アプリ： https://morishimasize.github.io/morishimasize/
 - 手書きノートとゲーム： https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 
+## 現在の手書き操作
+
+電卓の「じぶんで とく」とゲームは、どちらも通常のURLで1本指の手書き・2本指の拡大と移動を使います。以前の `touch=1` は不要です。1段拡大の別画面へは進みません。横線ボタン・消しゴム・元に戻す・ゲーム保存を共用し、既存の記録を引き継ぎます。実装は `prototypes/notebook-touch.js` と `full-notebook.js`、現在の操作説明はREADME冒頭にあります。
+
 ## PCの電源に依存しない方法：Codex Cloud
 
 OpenAIの案内では、デスクトップまたはWebで開発環境を作成・公開した後、スマホからその環境を選んでコーディングを開始・継続できます。画面名や利用可否はアプリの版・アカウントの設定によって異なる場合があります。

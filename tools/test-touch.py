@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise finger gestures using the same controller as the browser prototype."""
+"""Exercise finger gestures using the same controller as the standard notebook."""
 from pathlib import Path
 import shutil,subprocess,tempfile
 root=Path(__file__).resolve().parents[1]
@@ -38,6 +38,7 @@ c.down(8,{x:150,y:200});c.move(8,{x:150,y:250});c.up(8);ok(near(commits[2][0][0]
 size={width:700,height:620};c.resize();ok(near(view.factor,620/576)&&state.x>0,'tablet fit centered');
 c.down(9,{x:200,y:200});c.down(10,{x:300,y:200});c.down(11,{x:400,y:200});c.up(9);c.move(10,{x:250,y:250});c.up(10);c.up(11);ok(commits.length===3,'third finger never writes');
 c.down(12,{x:200,y:200});c.move(12,{x:210,y:210});c.resize();c.up(12);ok(commits.length===3,'resize cancels unfinished ink');
+c.reset();const count=commits.length;c.down(13,{x:5,y:200});c.move(13,{x:5,y:300});c.up(13);ok(commits.length===count,'gray margin wrote on notebook edge');
 (typeof print==='function'?print:console.log)('PASS: '+checks+' finger gesture checks.');
 '''
 with tempfile.TemporaryDirectory() as d:

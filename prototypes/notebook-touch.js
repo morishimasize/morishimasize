@@ -1,8 +1,8 @@
-/* Finger-only experiment: activate with ?touch=1. Coordinates stay in notebook units. */
+/* The standard finger notebook keeps coordinates in notebook units. */
 'use strict';
 const touchViewState={scale:1,x:0,y:0};
 let touchView=null;
-function touchPaperHTML(){return `<div class="touch-notebook"><div class="touch-heading"><strong>${lesson.equation} ＝ ？</strong><button id="touch-reset">ぜんぶ みる</button></div><p class="touch-help">☝ 1ぽんで かく<br>✌ 2ほんで おおきく・うごかす</p><div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート"><div id="touch-stage" class="touch-stage paper-grid" style="--rows:${rowCount()};--cols:${columnCount()};width:${columnCount()*72}px;height:${rowCount()*72}px"><canvas id="paper" width="${columnCount()*72}" height="${rowCount()*72}" aria-label="ひっさんノート。1ぽんの ゆびで かく"></canvas></div></div><p class="touch-status"><span id="touch-scale" aria-live="polite">ぜんたい</span> ｜ <span id="touch-status" role="status">${tool==='line'?'せんを いれる だんの したを おしてね。':tool==='erase'?'けしたい すうじや せんを おしてね。':'すうじは ひとマスに ひとつ かこう。'}</span></p></div>`;}
+function touchPaperHTML(){return `<div class="touch-notebook"><div class="touch-heading"><strong>${lesson.equation} ＝ ？</strong><button id="touch-reset">ぜんぶ みる</button></div><p class="touch-help">☝ 1ぽんで かく<br>✌ 2ほんで おおきく・うごかす<br><small>ページは ノートの そとで うごかしてね。</small></p><div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート"><div id="touch-stage" class="touch-stage paper-grid" style="--rows:${rowCount()};--cols:${columnCount()};width:${columnCount()*72}px;height:${rowCount()*72}px"><canvas id="paper" width="${columnCount()*72}" height="${rowCount()*72}" aria-label="ひっさんノート。1ぽんの ゆびで かく"></canvas></div></div><p class="touch-status"><span id="touch-scale" aria-live="polite">ぜんたい</span> ｜ <span id="touch-status" role="status">${tool==='line'?'せんを いれる だんの したを おしてね。':tool==='erase'?'けしたい すうじや せんを おしてね。':'すうじは ひとマスに ひとつ かこう。'}</span></p></div>`;}
 
 /* DOM-independent gesture controller; all one-finger edits commit on release. */
 function createNotebookGesture({state,width,height,bounds,paint,preview,commit,busy}){
@@ -19,7 +19,7 @@ function createNotebookGesture({state,width,height,bounds,paint,preview,commit,b
  function anchor(){const p=pair(),s=fit()*state.scale;gesture={...p,scale:state.scale,ax:(p.x-state.x)/s,ay:(p.y-state.y)/s};}
  return {
   down(id,p){pointers.set(id,p);busy(true);
-   if(pointers.size===1&&!blocked){ink=[local(p)];preview(ink);}
+   if(pointers.size===1&&!blocked){const s=fit()*state.scale;const inside=p.x>=state.x&&p.x<=state.x+width*s&&p.y>=state.y&&p.y<=state.y+height*s;ink=inside?[local(p)]:null;preview(ink);}
    else{ink=null;blocked=true;preview(null);if(pointers.size>=2)anchor();}
   },
   move(id,p){if(!pointers.has(id))return;pointers.set(id,p);
