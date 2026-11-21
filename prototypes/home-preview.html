@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>はじめの がめん | ひっさんノート</title>
+<link rel="icon" href="../icon.png">
+<link rel="stylesheet" href="home-preview.css?v=1">
+</head>
+<body>
+<main class="home">
+  <header class="brand">
+    <span class="strawberry" aria-hidden="true">🍓</span>
+    <h1>ひっさんノート</h1>
+    <img src="../assets/pencil-sticker.png" class="pencil" alt="" width="72" height="108">
+  </header>
+  <section class="notebook" aria-labelledby="welcome">
+    <span class="tape" aria-hidden="true"></span>
+    <h2 id="welcome">なにを しよう？</h2>
+    <nav class="choices" aria-label="つかいかたを えらぶ">
+      <a class="choice answer" href="../index.html?mode=answer&amp;from=home-preview">
+        <span class="choice-icon" aria-hidden="true">🧮</span>
+        <span class="words"><strong>こたえを みる</strong><span>ときかたも わかるよ</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="choice practice" href="../index.html?mode=practice&amp;from=home-preview">
+        <span class="choice-icon" aria-hidden="true">✏️</span>
+        <span class="words"><strong>じぶんで とく</strong><span>かいて、まるつけ</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="choice game" href="full-notebook.html?from=home-preview">
+        <span class="choice-icon" aria-hidden="true">🧩</span>
+        <span class="words"><strong>けいさんゲーム</strong><span>もんだいを といて、<br>えを かんせい！</span><span id="resume-hint" class="resume-hint" hidden>つづきから あそべるよ</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </nav>
+    <p class="encouragement">じぶんの ペースで だいじょうぶ。</p>
+  </section>
+  <p class="preview-label">はじめの がめんの おためし</p>
+</main>
+<script src="notebook-save.js?v=save2"></script>
+<script>
+try { if (NotebookSave.read(localStorage).session) document.getElementById('resume-hint').hidden = false; } catch {}
+</script>
+</body>
+</html>

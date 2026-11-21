@@ -461,7 +461,7 @@
       #lesson-count { font-size:15px; }
     }
   </style>
-  <link rel="stylesheet" href="pop-theme.css?v=calc-writing-pop-a1">
+  <link rel="stylesheet" href="pop-theme.css?v=home-preview1-pop-a1">
 </head>
 <body>
  
@@ -595,7 +595,7 @@
     if (gop === '/' && b === 0) { em.textContent = '0ではわれないよ'; return; }
     if (gop === '-' && a < b)   { em.textContent = 'ひきざんができないよ'; return; }
     if (calculatorMode === 'practice') {
-      const query = new URLSearchParams({mode:'calculator',op:gop,a:String(a),b:String(b)});
+      const query = new URLSearchParams({mode:'calculator',op:gop,a:String(a),b:String(b),...(returnParams.get('from')==='home-preview'?{from:'home-preview'}:{})});
       window.location.href = 'prototypes/full-notebook.html?' + query;
       return;
     }
@@ -623,6 +623,15 @@
   }
   // 手書きノートから戻ったときは、入力した式と選んだ使い方を復元する。
   const returnParams = new URLSearchParams(window.location.search);
+  if (returnParams.get('from') === 'home-preview') {
+    document.querySelector('.mode-picker').hidden = true;
+    const homeLink = document.createElement('a');
+    homeLink.href = 'prototypes/home-preview.html';
+    homeLink.className = 'preview-home-link';
+    homeLink.textContent = '← はじめに';
+    document.querySelector('.card').prepend(homeLink);
+    document.querySelector('.input-subtitle').textContent = returnParams.get('mode') === 'practice' ? 'じぶんで とく ・ かいて、まるつけ' : 'こたえを みる ・ ときかたも わかるよ';
+  }
   if (returnParams.get('mode') === 'practice') {
     const a = returnParams.get('a'), b = returnParams.get('b'), op = returnParams.get('op');
     if (/^\d{1,5}$/.test(a || '') && /^\d{1,5}$/.test(b || '') && ['+','-','*','/'].includes(op)) {
