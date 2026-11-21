@@ -47,3 +47,11 @@
 .touch-heading button{min-width:100px;min-height:48px;font-size:14px;padding:8px;background:white}
 
 .touch-help small{font-size:12px;color:#557282}
+
+/* Keep page scrolling available on both sides, including when the paper is zoomed. */
+.writing-card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.touch-paper-frame{display:grid;grid-template-columns:48px minmax(0,1fr) 48px}
+.touch-page-rail{background:#e6e9ed;touch-action:pan-y;cursor:grab;display:flex;justify-content:center;align-items:center;color:#78838e;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.touch-page-rail:active{cursor:grabbing;background:#dce2e8}
+.touch-page-rail span{pointer-events:none;font-size:25px}
+.touch-viewport{min-width:0}

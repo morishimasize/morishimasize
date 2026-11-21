@@ -39,6 +39,20 @@ size={width:700,height:620};c.resize();ok(near(view.factor,620/576)&&state.x>0,'
 c.down(9,{x:200,y:200});c.down(10,{x:300,y:200});c.down(11,{x:400,y:200});c.up(9);c.move(10,{x:250,y:250});c.up(10);c.up(11);ok(commits.length===3,'third finger never writes');
 c.down(12,{x:200,y:200});c.move(12,{x:210,y:210});c.resize();c.up(12);ok(commits.length===3,'resize cancels unfinished ink');
 c.reset();const count=commits.length;c.down(13,{x:5,y:200});c.move(13,{x:5,y:300});c.up(13);ok(commits.length===count,'gray margin wrote on notebook edge');
+// Gray rails must never capture touch or prevent the browser's native scroll.
+let captured=false,prevented=0;const deltas=[];
+const rail={setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;}};
+attachPageDragRail(rail,v=>deltas.push(v));
+const event=(type,id,y,button=0)=>({pointerType:type,pointerId:id,clientY:y,button,preventDefault(){prevented++;}});
+rail.onpointerdown(event('touch',30,200));rail.onpointermove(event('touch',30,100));rail.onpointerup(event('touch',30,100));
+ok(!captured&&!prevented&&!deltas.length,'touch rail blocks native page scroll');
+rail.onpointerdown(event('mouse',31,300));rail.onpointermove(event('mouse',31,220));
+ok(captured&&deltas[0]===80,'mouse rail does not drag page');
+rail.onpointermove(event('mouse',32,100));ok(deltas.length===1,'unrelated pointer moves page');
+rail.onpointerup(event('mouse',31,220));rail.onpointermove(event('mouse',31,100));ok(!captured&&deltas.length===1,'mouse release keeps scrolling');
+rail.onpointerdown(event('mouse',33,200));rail.onpointercancel(event('mouse',33,200));rail.onpointermove(event('mouse',33,100));ok(!captured&&deltas.length===1,'cancel keeps scrolling');
+rail.onpointerdown(event('mouse',34,200));rail.onlostpointercapture(event('mouse',34,200));rail.onpointermove(event('mouse',34,100));ok(!captured&&deltas.length===1,'lost capture keeps scrolling');
+rail.onpointerdown(event('mouse',35,200,2));ok(!captured,'right click starts page drag');
 (typeof print==='function'?print:console.log)('PASS: '+checks+' finger gesture checks.');
 '''
 with tempfile.TemporaryDirectory() as d:
