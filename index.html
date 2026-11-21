@@ -461,7 +461,7 @@
       #lesson-count { font-size:15px; }
     }
   </style>
-  <link rel="stylesheet" href="pop-theme.css?v=pop-a1">
+  <link rel="stylesheet" href="pop-theme.css?v=calc-writing-pop-a1">
 </head>
 <body>
  
@@ -477,6 +477,13 @@
  
   <!-- 入力カード -->
   <div class="card notebook">
+    <fieldset class="mode-picker">
+      <legend>どうやって つかう？</legend>
+      <div class="mode-options">
+        <button type="button" data-mode="answer" aria-pressed="true" onclick="setMode('answer')"><strong>こたえを みる</strong><span>ときかたも わかるよ</span></button>
+        <button type="button" data-mode="practice" aria-pressed="false" onclick="setMode('practice')"><strong>じぶんで とく</strong><span>かいて、まるつけ</span></button>
+      </div>
+    </fieldset>
     <!-- 数字表示と演算子 -->
     <div class="formula-bar">
       <div class="number-field"><label id="label-n1">ひとつめの かず</label><button type="button" id="disp-n1" class="num-box active" aria-labelledby="label-n1 disp-n1" onclick="setTarget('n1')">0</button></div>
@@ -512,7 +519,7 @@
     <div class="em" id="em"></div>
  
     <!-- ＝ボタン -->
-<button class="calc-btn" onclick="calc()">ひっさんを みる →</button>
+<button id="calc-start" class="calc-btn" onclick="calc()">ひっさんを みる →</button>
   </div>
  
   <button id="back-btn" class="back-btn" onclick="backToInput()">← もどる</button>
@@ -525,11 +532,19 @@
 </div>
  
 <script>
+  let calculatorMode = 'answer';
   let gop = '+';
   let n1str = "", n2str = "", target = "n1";
  
   // ─── 入力 UI ───────────────────────────────────────────────
  
+  function setMode(mode) {
+    calculatorMode = mode === 'practice' ? 'practice' : 'answer';
+    document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === calculatorMode)));
+    document.getElementById('calc-start').textContent = calculatorMode === 'practice' ? 'ノートに かく →' : 'ひっさんを みる →';
+    document.getElementById('em').textContent = '';
+  }
+
   function setTarget(t) {
     target = t;
     document.getElementById("disp-n1").classList.toggle("active", t === "n1");
@@ -579,6 +594,11 @@
     const a = parseInt(n1str), b = parseInt(n2str);
     if (gop === '/' && b === 0) { em.textContent = '0ではわれないよ'; return; }
     if (gop === '-' && a < b)   { em.textContent = 'ひきざんができないよ'; return; }
+    if (calculatorMode === 'practice') {
+      const query = new URLSearchParams({mode:'calculator',op:gop,a:String(a),b:String(b)});
+      window.location.href = 'prototypes/full-notebook.html?' + query;
+      return;
+    }
   if      (gop === '+') rAdd(a, b);
     else if (gop === '-') rSub(a, b);
     else if (gop === '*') rMul(a, b);
@@ -600,6 +620,18 @@
     activeLesson = null; lessonIndex = 0; lessonOverview = false;
     document.getElementById('hp').innerHTML = '<div style="color:#9E8F7D; text-align:center; padding:20px;">すうじをいれて「ひっさんを みる」をおしてね！</div>';
     window.scrollTo(0, 0);
+  }
+  // 手書きノートから戻ったときは、入力した式と選んだ使い方を復元する。
+  const returnParams = new URLSearchParams(window.location.search);
+  if (returnParams.get('mode') === 'practice') {
+    const a = returnParams.get('a'), b = returnParams.get('b'), op = returnParams.get('op');
+    if (/^\d{1,5}$/.test(a || '') && /^\d{1,5}$/.test(b || '') && ['+','-','*','/'].includes(op)) {
+      n1str = a; n2str = b;
+      setOp(op, document.querySelectorAll('.op-btn')[['+','-','*','/'].indexOf(op)]);
+      updateDisplay();
+      setTarget('n1');
+    }
+    setMode('practice');
   }
   // ▲▲▲ ここまで追加 ▲▲▲
 

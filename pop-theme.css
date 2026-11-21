@@ -72,3 +72,14 @@ button:focus-visible,.lesson-board-viewport:focus-visible{outline:4px solid #236
 /* 解答のマスを避け、ノートの外縁だけに鉛筆シールを添える。 */
 .answer-book::after{left:auto;right:-12px;top:auto;bottom:-28px;width:80px;height:120px;border:0;border-radius:0;background:url('assets/pencil-sticker.png') center/contain no-repeat;box-shadow:none;transform:rotate(4deg);}
 @media(max-width:700px){.answer-book::after{right:-10px;bottom:-24px;width:52px;height:78px;}}
+
+/* 入力の前に、答えを見るか自分で書くかを選ぶ。 */
+.mode-picker{border:0;padding:0;margin:0 0 8px;min-width:0;width:100%}
+.mode-picker legend{font-size:17px;font-weight:900;margin-bottom:10px}
+.mode-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode-options button{font:inherit;min-width:0;min-height:76px;padding:10px 5px;border:3px solid #E9B5CE;border-radius:20px;background:linear-gradient(#FFF,#FFF0F7);color:#603323;box-shadow:0 4px 0 #E4AEC9;cursor:pointer}
+.mode-options strong,.mode-options span{display:block}
+.mode-options strong{font-size:20px}.mode-options span{font-size:13px;margin-top:4px}
+.mode-options button[aria-pressed=true]{border-color:#2183AC;background:linear-gradient(#E5FAFF,#AAE7FF);box-shadow:0 4px 0 #459BBF}
+.mode-options button[aria-pressed=true] strong::before{content:'✓ ';color:#216988}
+@media(max-width:700px){.mode-options{gap:8px}.mode-options strong{font-size:16px}.mode-options span{font-size:12px}.mode-picker legend{font-size:15px}}

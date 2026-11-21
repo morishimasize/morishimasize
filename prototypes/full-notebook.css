@@ -10,3 +10,18 @@
 
 /* The printed question stays in place while work and small notes are editable. */
 .review-cell.is-given input.main{color:#5b6972;background:#edf2f54d;cursor:default}
+
+/* Keep large worksheets readable; scroll the paper rather than shrinking digits. */
+.paper-scroll{min-width:0;max-width:100%;overflow:auto;padding:2px 4px 8px;overscroll-behavior-x:contain}
+.paper-scroll:focus-visible{outline:3px solid #3b85af;outline-offset:1px}
+.paper-scroll .canvas-wrap,.paper-scroll .review-grid{width:100%;max-width:none;min-width:calc(var(--cols,6) * 48px)}
+.paper-grid{background-size:calc(100% / var(--cols,6)) calc(100% / var(--rows))}
+.review-grid{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));aspect-ratio:var(--cols,6) / var(--rows)}
+.equation{overflow-wrap:anywhere;min-width:0}
+.calculator-notebook{background:#ffe2ee}
+.calculator-notebook .primary{background:linear-gradient(#f68aba,#dc327d);border:2px solid white;box-shadow:0 4px 0 #b82768}
+.calculator-notebook .card{border:3px solid #ffda42;border-radius:20px}
+
+@media(max-width:600px){.calculator-notebook header{flex-wrap:wrap;gap:4px}.calculator-notebook header span{max-width:none;font-size:12px;width:100%}.grade-controls{flex-wrap:wrap}.grade-controls button{min-width:120px}}
+
+.paper-area{min-width:0}.paper-navigation{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:8px 0}.paper-navigation button{min-width:80px;min-height:48px;padding:8px;font-size:14px}.paper-navigation span{font-size:12px}
