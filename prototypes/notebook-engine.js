@@ -110,7 +110,7 @@ for(let dr=-1;dr<rows;dr++)for(let dc=-3;dc<cols;dc++){if(anchored&&(dr!==0||dc!
 if(!best)return {ok:false,issues:[{kind:'layout',message:'かく ばしょを もういちど たしかめよう。'}],checks:[]};
 const issues=[],checks=[];for(const type of ['main','notes'])for(const [k,v]of Object.entries(best[type])){const actual=recognized[type][k]||'';const ok=actual===v;checks.push({kind:type,key:k,ok});if(!ok)issues.push({kind:type,key:k,actual,missing:actual==='',message:type==='notes'?'ちいさく かく すうじを たしかめよう。':'この マスの すうじ・しるしを たしかめよう。'});}
 for(const type of ['main','notes'])for(const k of Object.keys(recognized[type]))if(!best[type][k]&&recognized[type][k])issues.push({kind:type,key:k,message:'この マスにも すうじが あるよ。よみとりを たしかめよう。'});
-for(const l of best.lines){const segments=recognized.lines.filter(a=>a.row===l.row).sort((a,b)=>a.start-b.start);let reach=l.start;for(const a of segments)if(a.start<=reach+.5&&a.end>=reach-.5)reach=Math.max(reach,a.end);const ok=reach>=l.end-.5;checks.push({kind:'line',row:l.row,ok});if(!ok)issues.push({kind:'line',row:l.row,message:'けいさんの せんを たしかめよう。'});}
+for(const l of best.lines){const segments=recognized.lines.filter(a=>a.row===l.row).sort((a,b)=>a.start-b.start);let reach=l.start;for(const a of segments)if(a.start<=reach+.5&&a.end>=reach-.5)reach=Math.max(reach,a.end);const ok=reach>=l.end-.5;checks.push({kind:'line',row:l.row,ok});if(!ok)issues.push({kind:'line',...l,message:'けいさんの せんを たしかめよう。'});}
 for(const b of best.brackets){const ok=recognized.brackets.some(x=>x.row===b.row&&x.col===b.col);checks.push({kind:'bracket',...b,ok});if(!ok)issues.push({kind:'bracket',...b,message:'わりざんの かたちを たしかめよう。'});}
 return {ok:issues.length===0,issues,checks,offset:{row:best.dr,col:best.dc}};
 }

@@ -98,11 +98,35 @@ function renderMiniReading(){
  renderInkQuestions();
  $('mini-reading').innerHTML=miniReadingHTML(recognized);
 }
+function worksheetIssueMark(issue){
+ const cell=E.CELL;
+ if(issue.key){
+  const [row,col]=issue.key.split(':').map(Number);
+  const x=col*cell,y=row*cell;
+  const note=issue.kind==='notes',top=y+(note?3:24),height=note?22:44;
+  const shape=issue.missing?'grade-missing':'grade-wrong';
+  const cross=issue.missing?'':`<path class="grade-cross" d="M${x+57} ${top+6}l8 8m0-8l-8 8"/>`;
+  return `<rect class="${shape}" data-cell="${issue.key}" data-kind="${issue.kind}" x="${x+3}" y="${top}" width="66" height="${height}" rx="6"/>${cross}`;
+ }
+ if(issue.kind==='line'){
+  return `<line class="grade-rule" data-row="${issue.row}" x1="${issue.start*cell+4}" x2="${issue.end*cell-4}" y1="${issue.row*cell}" y2="${issue.row*cell}"/>`;
+ }
+ if(issue.kind==='bracket'){
+  const x=issue.col*cell,y=issue.row*cell;
+  return `<path class="grade-rule" d="M${x-14} ${y+3} Q${x+6} ${y+36} ${x-14} ${y+69}"/>`;
+ }
+ return '';
+}
+function renderWorksheetGrade(){
+ $('grade-circle').hidden=!result?.ok;
+ $('grade-issues').innerHTML=result?.issues.map(worksheetIssueMark).join('')||'';
+}
 function renderLiveGrade(){
+ renderWorksheetGrade();
  const target=$('live-grade');
  target.classList.toggle('live-correct',Boolean(result?.ok));
  target.innerHTML=result?.ok?`<strong>ぜんぶ できたね！</strong><button id="live-next">${calculatorMode?'べつの けいさんへ':'ごほうびの えへ'} →</button>`:
-  result?'<strong>もういちど たしかめよう</strong>':'';
+  result?'<strong>もういちど たしかめよう</strong><span>ノートの あかい ところを みてね。</span>':'';
  const next=$('live-next');
  if(next)next.onclick=()=>{
   if(calculatorMode){returnToCalculator();return;}
@@ -122,6 +146,7 @@ function markLiveWork(){
  }
  $('read-status').textContent='';
  gradeRecognizedWork();
+ if(!result.ok&&touchViewState.scale>1)touchView.reset();
  renderLiveGrade();renderMiniReading();save();
 }
 function liveEditorHTML(){

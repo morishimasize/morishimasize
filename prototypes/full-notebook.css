@@ -314,3 +314,23 @@
   .game-setup .op-tabs, .game-setup .example-row { grid-column:1 / -1; margin:3px 0; }
   .game-setup .start, .game-setup .bottom-nav { margin:0; }
 }
+
+/* Marks never intercept the pen. Cell marks follow the same zoom as the ink. */
+#grade-issues, #grade-circle { position:absolute; pointer-events:none; }
+#grade-issues { inset:0; width:100%; height:100%; z-index:1; }
+#grade-circle {
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(75%,350px);
+  height:min(80%,350px);
+  fill:none;
+  stroke:#d01f43;
+  stroke-width:7;
+  z-index:2;
+}
+#grade-circle svg { display:block; width:100%; height:100%; }
+.grade-wrong, .grade-missing { fill:#dd244014; stroke:#cb2040; stroke-width:3; }
+.grade-missing { fill:none; stroke-dasharray:5 4; }
+.grade-rule, .grade-cross { fill:none; stroke:#cb2040; stroke-width:3.5; stroke-linecap:round; }
+.grade-rule { stroke-dasharray:6 5; }

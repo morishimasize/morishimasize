@@ -9,8 +9,12 @@ function touchPaperHTML(){
    <div id="page-rail-left" class="touch-page-rail" role="region" aria-label="ページを うごかす ひだりの はし"><span aria-hidden="true">↕</span></div>
    <div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート">
     <div id="touch-stage" class="touch-stage paper-grid" style="width:${width}px;height:${height}px">
+     <svg id="grade-issues" viewBox="0 0 ${width} ${height}" aria-hidden="true"></svg>
      <div id="ink-questions" aria-hidden="true"></div>
      <canvas id="paper" width="${width}" height="${height}" aria-label="${lesson.equation} の ひっさんノート。1ぽんの ゆびで かく"></canvas>
+    </div>
+    <div id="grade-circle" hidden aria-hidden="true">
+     <svg viewBox="0 0 160 160"><circle cx="80" cy="80" r="69"/></svg>
     </div>
    </div>
    <div id="page-rail-right" class="touch-page-rail" role="region" aria-label="ページを うごかす みぎの はし"><span aria-hidden="true">↕</span></div>
