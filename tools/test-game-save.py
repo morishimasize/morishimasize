@@ -86,6 +86,23 @@ run(`
  readAll();check(recognized.lines.some(l=>l.row===4),'button rule lost during reading');
  check(recognized.main['5:2']==='1','enlarged row ink not recognized');
 `);
+
+run(`
+ $('resume').onclick();$('back-write').onclick();$('erase').onclick();
+ const beforeInk=JSON.stringify(strokes),event=(x,y)=>({pointerId:17,button:0,clientX:x,clientY:y,preventDefault(){}});
+ $('paper').onpointerdown(event(200,288));
+ check(extraLines.length===0&&JSON.stringify(strokes)===beforeInk,'rule erase removed ink or failed');
+ check(NotebookSave.read(storage).session.rules.length===0,'erased rule not saved');
+ undoWork();check(extraLines.some(l=>l.row===4),'erased rule undo failed');
+ const count=history.length;$('paper').onpointerdown(event(5,288));check(extraLines.length===1&&history.length===count,'eraser outside rule span removed it');
+ $('paper').onpointerdown(event(200,216));check(E.given(lesson).lines.some(l=>l.row===3),'eraser removed printed rule');
+ editRow=3;$('zoom-row').onclick();$('row-erase').onclick();
+ $('row-paper').onpointerdown(event(250,111));check(extraLines.length===0,'row editor eraser missed lower boundary');
+ check(!$('row-undo').disabled,'row undo button not updated');
+ $('row-undo').onclick();check(extraLines.some(l=>l.row===4),'row eraser undo failed');
+ $('row-close').onclick();
+`);
+run(`$('resume').onclick();check(extraLines.some(l=>l.row===4),'restored erased-rule undo lost after reload');`);
 const previous=values.get('hissan-full-notebook-v2');failWrite=true;
 run(`$('resume').onclick();check(!storageOK,'save failure hidden');`);
 check(values.get('hissan-full-notebook-v2')===previous,'failed write destroyed previous save');failWrite=false;
@@ -113,7 +130,12 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  $('rule-tool').onclick();down(4,200,360);check(extraLines.length===0,'rule changed before release');down(5,300,360);up(5);up(4);check(extraLines.length===0,'pinch in rule mode added rule');
  down(6,200,360);up(6);check(extraLines[0].row===5&&tool==='pen','finger rule not committed');
  $('erase').onclick();down(7,300,250);down(8,400,250);up(8);up(7);check(strokes.length===1,'pinch erased completed ink');
- $('pen').onclick();readAll();check(phase==='review'&&recognized.lines[0].row===5,'finger trial reading failed');
+ down(9,200,360);down(10,300,360);up(10);up(9);check(extraLines.length===1,'pinch erased placed rule');
+ touchViewState.scale=2;touchViewState.x=-216;touchViewState.y=-288;touchView.draw();
+ down(11,216,432);up(11);check(extraLines.length===0&&strokes.length===1,'zoomed eraser missed rule or removed digit');
+ $('undo').onclick();check(extraLines[0].row===5,'zoomed eraser undo failed');
+ $('touch-reset').onclick();
+ $('pen').onclick();readAll();check(phase==='review' &&recognized.lines[0].row===5,'finger trial reading failed');
  $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
 `)(storage,check);
 check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');

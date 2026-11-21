@@ -3,6 +3,18 @@
 let rowEditorOpen=false,editRow=3,extraLines=[];
 function rememberWork(){history.push({strokes:strokes.slice(),rules:extraLines.slice()});}
 function undoWork(){if(history.length){const previous=history.pop();strokes=previous.strokes;extraLines=previous.rules;}refresh(false);}
+// Prefer a nearby placed rule so erasing it does not also remove adjacent digits.
+function eraseWorkAt(p){
+ let nearest=-1,distance=18;
+ extraLines.forEach((line,i)=>{
+  const x=Math.max(line.start*72+3,Math.min(line.end*72-3,p[0]));
+  const d=Math.hypot(p[0]-x,p[1]-line.row*72);
+  if(d<distance){nearest=i;distance=d;}
+ });
+ if(nearest>=0){rememberWork();extraLines=extraLines.filter((_,i)=>i!==nearest);result=null;return;}
+ const kept=strokes.filter(s=>!s.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<18));
+ if(kept.length!==strokes.length){rememberWork();strokes=kept;result=null;}
+}
 function toggleWorkRule(row){
  const fixed=E.given(lesson);
  if(row<1||row>rowCount()||fixed.lines.some(l=>l.row===row))return;

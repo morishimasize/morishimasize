@@ -2,7 +2,7 @@
 'use strict';
 const touchViewState={scale:1,x:0,y:0};
 let touchView=null;
-function touchPaperHTML(){return `<div class="touch-notebook"><div class="touch-heading"><strong>${lesson.equation} ＝ ？</strong><button id="touch-reset">ぜんぶ みる</button></div><p class="touch-help">☝ 1ぽんで かく<br>✌ 2ほんで おおきく・うごかす</p><div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート"><div id="touch-stage" class="touch-stage paper-grid" style="--rows:${rowCount()};--cols:${columnCount()};width:${columnCount()*72}px;height:${rowCount()*72}px"><canvas id="paper" width="${columnCount()*72}" height="${rowCount()*72}" aria-label="ひっさんノート。1ぽんの ゆびで かく"></canvas></div></div><p class="touch-status"><span id="touch-scale" aria-live="polite">ぜんたい</span> ｜ <span id="touch-status" role="status">${tool==='line'?'せんを いれる だんの したを おしてね。':tool==='erase'?'けしたい すうじを おしてね。':'すうじは ひとマスに ひとつ かこう。'}</span></p></div>`;}
+function touchPaperHTML(){return `<div class="touch-notebook"><div class="touch-heading"><strong>${lesson.equation} ＝ ？</strong><button id="touch-reset">ぜんぶ みる</button></div><p class="touch-help">☝ 1ぽんで かく<br>✌ 2ほんで おおきく・うごかす</p><div id="touch-viewport" class="touch-viewport" role="region" aria-label="2ほんの ゆびで おおきくできる ノート"><div id="touch-stage" class="touch-stage paper-grid" style="--rows:${rowCount()};--cols:${columnCount()};width:${columnCount()*72}px;height:${rowCount()*72}px"><canvas id="paper" width="${columnCount()*72}" height="${rowCount()*72}" aria-label="ひっさんノート。1ぽんの ゆびで かく"></canvas></div></div><p class="touch-status"><span id="touch-scale" aria-live="polite">ぜんたい</span> ｜ <span id="touch-status" role="status">${tool==='line'?'せんを いれる だんの したを おしてね。':tool==='erase'?'けしたい すうじや せんを おしてね。':'すうじは ひとマスに ひとつ かこう。'}</span></p></div>`;}
 
 /* DOM-independent gesture controller; all one-finger edits commit on release. */
 function createNotebookGesture({state,width,height,bounds,paint,preview,commit,busy}){
@@ -45,7 +45,7 @@ function attachTouchDrawing(canvas){
   preview:s=>renderStrokes(canvas,tool==='pen'?s:null),busy:v=>{drawing=v;},
   commit:s=>{if(epoch!==version)return;
    if(tool==='line'){toggleWorkRule(Math.round(s[s.length-1][1]/72));tool='pen';refresh(false);return;}
-   if(tool==='erase'){const p=s[s.length-1],kept=strokes.filter(line=>!line.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<18));if(kept.length!==strokes.length){rememberWork();strokes=kept;}}
+   if(tool==='erase'){eraseWorkAt(s[s.length-1]);}
    else if(s.length>1){rememberWork();strokes.push(s);}
    renderStrokes(canvas);$('undo').disabled=!history.length;save();
   }
