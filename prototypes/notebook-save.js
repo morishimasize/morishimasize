@@ -12,7 +12,25 @@ function validWork(w){
  }
  return Array.isArray(w.lines)&&w.lines.length<=300&&w.lines.every(l=>l&&[l.row,l.start,l.end].every(finite))&&Array.isArray(w.brackets)&&w.brackets.length<=100&&w.brackets.every(b=>b&&[b.row,b.col].every(finite));
 }
-function validSession(s){return s&&s.version===1&&s.config&&['+','-','*','/'].includes(s.config.op)&&Number.isInteger(s.config.example)&&s.config.example>=0&&s.config.example<3&&['write','review','reward'].includes(s.phase)&&typeof s.credited==='boolean'&&typeof s.graded==='boolean'&&(s.rightAligned===undefined||typeof s.rightAligned==='boolean')&&(s.compactPaper===undefined||typeof s.compactPaper==='boolean')&&(s.rules===undefined||Array.isArray(s.rules)&&s.rules.length<=100&&s.rules.every(l=>l&&[l.row,l.start,l.end].every(finite)))&&(s.editRow===undefined||Number.isInteger(s.editRow)&&s.editRow>=0&&s.editRow<100)&&Array.isArray(s.strokes)&&s.strokes.length<=10000&&s.strokes.every(stroke=>Array.isArray(stroke)&&stroke.length<=20000&&stroke.every(p=>Array.isArray(p)&&p.length===2&&p.every(finite)))&&(s.recognized===null||validWork(s.recognized))&&(s.phase==='write'||s.recognized!==null);}
+function validCorrections(c){
+ if(!c||typeof c!=='object')return false;
+ for(const name of ['main','notes']){
+  const cells=c[name];
+  if(!cells||typeof cells!=='object'||Array.isArray(cells))return false;
+  const length=name==='main'?1:2;
+  if(!Object.entries(cells).every(([key,edit])=>/^\d{1,2}:\d{1,2}$/.test(key)&&edit&&
+   typeof edit.value==='string'&&edit.value.length<=length&&/^[0-9+−×?]*$/.test(edit.value)&&
+   typeof edit.source==='string'&&edit.source.length<=100000&&/^[a-z0-9.]*$/.test(edit.source)))return false;
+ }
+ for(const name of ['lines','brackets']){
+  const edit=c[name];
+  if(edit===undefined)continue;
+  if(!edit||typeof edit.source!=='string'||edit.source.length>100000||
+   !validWork({main:{},notes:{},lines:[],brackets:[],[name]:edit.value}))return false;
+ }
+ return true;
+}
+function validSession(s){return s&&s.version===1&&s.config&&['+','-','*','/'].includes(s.config.op)&&Number.isInteger(s.config.example)&&s.config.example>=0&&s.config.example<3&&['write','review','reward'].includes(s.phase)&&typeof s.credited==='boolean'&&typeof s.graded==='boolean'&&(s.readingCorrections===undefined||validCorrections(s.readingCorrections))&&(s.rightAligned===undefined||typeof s.rightAligned==='boolean')&&(s.compactPaper===undefined||typeof s.compactPaper==='boolean')&&(s.rules===undefined||Array.isArray(s.rules)&&s.rules.length<=100&&s.rules.every(l=>l&&[l.row,l.start,l.end].every(finite)))&&(s.editRow===undefined||Number.isInteger(s.editRow)&&s.editRow>=0&&s.editRow<100)&&Array.isArray(s.strokes)&&s.strokes.length<=10000&&s.strokes.every(stroke=>Array.isArray(stroke)&&stroke.length<=20000&&stroke.every(p=>Array.isArray(p)&&p.length===2&&p.every(finite)))&&(s.recognized===null||validWork(s.recognized))&&(s.phase==='write'||s.recognized!==null);}
 function read(storage){
  const raw=storage.getItem(KEY);
  if(raw!==null){

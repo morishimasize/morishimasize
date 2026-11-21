@@ -81,11 +81,11 @@ function attachTouchDrawing(canvas){
   preview:s=>renderStrokes(canvas,tool==='pen'?s:null),busy:v=>{drawing=v;},
   commit:s=>{if(epoch!==version)return;
    let inkChanged=false;
-   if(tool==='line'){toggleWorkRule(Math.round(s[s.length-1][1]/72));tool='pen';}
+   if(tool==='line'){const count=history.length;toggleWorkRule(Math.round(s[s.length-1][1]/72));inkChanged=history.length!==count;tool='pen';}
    else if(tool==='erase'){
-    const previousInk=strokes;
+    const count=history.length;
     eraseWorkAt(s[s.length-1]);
-    inkChanged=previousInk!==strokes;
+    inkChanged=history.length!==count;
    }else if(s.length>1){rememberWork();strokes.push(s);inkChanged=true;}
    updateWritingPaper(inkChanged);
   }

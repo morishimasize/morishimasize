@@ -10,7 +10,7 @@ function picture(count){const stage=Math.min(4,Math.floor(count/3));return `<div
 function status(s){$('notice').textContent=s;}
 function save(){
  if(calculatorMode)return;
- if(lesson&&['write','review','reward'].includes(phase))savedGame={version:1,config:{op:lesson.op,example:SAMPLES[lesson.op].findIndex(([a,b])=>a===lesson.a&&b===lesson.b)},phase,rightAligned:lesson.rightAligned,compactPaper:lesson.compactPaper,strokes,rules:extraLines,editRow,recognized,graded:result!==null,credited,guide,tool,reviewTool};
+ if(lesson&&['write','review','reward'].includes(phase))savedGame={version:1,config:{op:lesson.op,example:SAMPLES[lesson.op].findIndex(([a,b])=>a===lesson.a&&b===lesson.b)},phase,rightAligned:lesson.rightAligned,compactPaper:lesson.compactPaper,strokes,rules:extraLines,editRow,recognized,readingCorrections:fingerNotebook?readingCorrections:undefined,graded:result!==null,credited,guide,tool,reviewTool};
  try{NotebookSave.write(localStorage,progress,savedGame);storageOK=true;}catch{storageOK=false;}
  const message=$('save-status');if(message){message.classList.toggle('save-failed',!storageOK);message.textContent=storageOK?(savedGame?'ここまで ほぞんしたよ。あとで つづきから あそべるよ。':'えの すすみぐあいは、じどうで ほぞんするよ。'):'つづきを ほぞんできなかったよ。この ページを とじると きえてしまうよ。';}
 }
@@ -19,12 +19,19 @@ function resumeGame(){
  Object.assign(touchViewState,{scale:1,x:0,y:0});
  const game=savedGame;config={...game.config};const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=game.rightAligned===true;lesson.compactPaper=game.compactPaper===true;
  strokes=game.strokes;extraLines=game.rules||[];editRow=Math.min(rowCount()-1,Math.max(0,game.editRow??(lesson.op==='/'?1:3)));recognized=game.recognized;credited=game.credited;guide=!!game.guide;tool=game.tool==='erase'?'erase':'pen';reviewTool=['number','note','line','bracket'].includes(game.reviewTool)?game.reviewTool:'number';history=[];
- result=game.graded&&recognized?E.gradeWork(lesson,recognized,rowCount()):null;
- phase=game.phase==='reward'&&(!credited||!result?.ok)?'review':game.phase;refresh();
+ if(fingerNotebook){
+  resumeLiveReading(game);
+  result=game.graded?E.gradeWork(lesson,recognized,rowCount()):null;
+  phase=game.phase==='reward'&&credited&&result?.ok?'reward':'write';
+ }else{
+  result=game.graded&&recognized?E.gradeWork(lesson,recognized,rowCount()):null;
+  phase=game.phase==='reward'&&(!credited||!result?.ok)?'review':game.phase;
+ }
+ refresh();
 }
 function refresh(focus=true){version++;drawing=false;clearTimeout(inkFeedbackTimer);document.body.classList.toggle('notebook-writing',fingerNotebook&&phase==='write');document.body.classList.toggle('notebook-review',phase==='review');$('notice').textContent='';if(phase==='setup')setup();else if(phase==='write')writing();else if(phase==='review')review();else finished();if(focus){window.scrollTo(0,0);$('app').setAttribute('tabindex','-1');$('app').focus({preventScroll:true});}document.querySelectorAll('[data-paper-direction]').forEach(button=>button.onclick=()=>{const paper=button.closest('.paper-area').querySelector('.paper-scroll');paper.scrollBy({left:Number(button.dataset.paperDirection)*paper.clientWidth*.7,behavior:'smooth'});});if(!calculatorMode){$('app').insertAdjacentHTML('beforeend','<p id="save-status" class="save-status" role="status"></p>');save();}}
 function setup(){$('app').innerHTML=`<section class="card game-setup">${savedGame?'<div class="resume-card"><p>まえの つづきが あるよ</p><button class="primary" id="resume">つづきから あそぶ →</button></div>':''}<h1>けいさんゲーム</h1><p class="sub">ノートの しきの つづきに、とちゅうの けいさんと こたえを かいてね。</p><div class="op-tabs">${Object.entries(OPS).map(([op,v])=>`<button data-op="${op}" aria-pressed="${op===config.op}"><b>${v[0]}</b><span>${v[1]}</span></button>`).join('')}</div><div class="example-row"><label for="sample">もんだい</label><select id="sample">${SAMPLES[config.op].map(([x,y],i)=>`<option value="${i}" ${i===config.example?'selected':''}>${x} ${OPS[config.op][0]} ${y}</option>`).join('')}</select></div><button class="primary start" id="start">ノートに かく →</button><div class="bottom-nav"><button id="book">📖 できたえほん（${Math.min(progress,12)} / 12もん）</button></div></section>`;
-document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{config={op:b.dataset.op,example:0};refresh(false);});$('sample').onchange=()=>config.example=Number($('sample').value);if($('resume'))$('resume').onclick=resumeGame;$('start').onclick=()=>{Object.assign(touchViewState,{scale:1,x:0,y:0});const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=fingerNotebook;lesson.compactPaper=fingerNotebook;strokes=[];extraLines=[];editRow=lesson.op==='/'?1:3;rowEditorOpen=false;history=[];recognized=null;result=null;credited=false;guide=false;tool='pen';phase='write';refresh();};$('book').onclick=()=>{phase='book';refresh();};}
+document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{config={op:b.dataset.op,example:0};refresh(false);});$('sample').onchange=()=>config.example=Number($('sample').value);if($('resume'))$('resume').onclick=resumeGame;$('start').onclick=()=>{Object.assign(touchViewState,{scale:1,x:0,y:0});const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=fingerNotebook;lesson.compactPaper=fingerNotebook;strokes=[];extraLines=[];editRow=lesson.op==='/'?1:3;rowEditorOpen=false;history=[];readingCorrections=emptyReadingCorrections();recognized=null;result=null;credited=false;guide=false;tool='pen';phase='write';refresh();};$('book').onclick=()=>{phase='book';refresh();};}
 function returnToCalculator(){window.location.href='../calculator.html?'+new URLSearchParams({mode:'practice',op:lesson?.op||'+',a:String(lesson?.a??0),b:String(lesson?.b??0)});}
 function columnCount(){return E.columns(lesson);}
 function rowCount(){return E.rows(lesson);}
@@ -59,29 +66,21 @@ function syncWritingTools(){
 }
 const readInk=E.createInkReader();
 let inkFeedbackTimer;
-function readNotebookInk(){
- const work=readInk(strokes,rowCount(),columnCount());
+function readNotebookInk(sources){
+ const work=readInk(strokes,rowCount(),columnCount(),sources);
  for(const key of Object.keys(E.given(lesson).main))delete work.main[key];
  return work;
-}
-function showInkQuestions(){
- const {main,notes}=readNotebookInk(),marks=[];
- for(const [type,cells] of Object.entries({main,notes}))for(const [key,value] of Object.entries(cells)){
-  if(!value.includes('?'))continue;
-  const [row,col]=key.split(':').map(Number);
-  marks.push(`<span class="ink-question ${type}" data-cell="${key}" style="--row:${row};--col:${col}">?</span>`);
- }
- $('ink-questions').innerHTML=marks.join('');
- $('ink-feedback').textContent=marks.length?'よみにくい マスに「？」が あるよ。':'';
 }
 function updateWritingPaper(inkChanged=false){
  renderStrokes($('paper'));
  syncWritingTools();
  if(inkChanged){
   clearTimeout(inkFeedbackTimer);
+  result=null;
   $('read-status').textContent='';
-  if(strokes.length)inkFeedbackTimer=setTimeout(showInkQuestions,180);
-  else showInkQuestions();
+  renderLiveGrade();
+  if(strokes.length)inkFeedbackTimer=setTimeout(()=>{refreshLiveReading();save();},180);
+  else refreshLiveReading();
  }
  save();
 }
@@ -93,17 +92,24 @@ function writing(){
    ${writingToolbar('うえの どうぐ')}
   </div>
   ${touchPaperHTML()}
-  <div class="notebook-dock">
-   ${writingToolbar('したの どうぐ','-bottom')}
-   <div class="notebook-actions">
-    <button id="clear">ぜんぶ かきなおす</button>
-    <button id="read" class="primary">よみとる →</button>
-   </div>
-   <p class="status" id="read-status" role="status"></p>
-  </div>
+  <div class="notebook-dock">${writingToolbar('したの どうぐ','-bottom')}</div>
+  <aside class="notebook-reading" aria-label="よみとりと まるつけ">
+   <button id="open-reading" type="button" aria-haspopup="dialog" aria-label="よみとりを おおきく みる">
+    <span class="mini-title">よみとり
+     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5 M15 4h5v5 M4 15v5h5 M20 15v5h-5"/></svg>
+    </span>
+    <span id="mini-reading"></span>
+   </button>
+   <button id="mark-work" class="primary">まるつけ →</button>
+   <div id="live-grade" aria-live="polite"></div>
+   <p id="read-status" role="status"></p>
+  </aside>
+  <button id="clear" class="notebook-clear">ぜんぶ かきなおす</button>
+  ${liveEditorHTML()}
  </section>`;
  attachDrawing($('paper'));
- showInkQuestions();
+ refreshLiveReading();
+ renderLiveGrade();
  $('back').onclick=()=>{if(calculatorMode){returnToCalculator();return;}phase='setup';refresh();};
  for(const button of writingTools)for(const suffix of ['','-bottom'])$(button.id+suffix).onclick=()=>{
   if(drawing)return;
@@ -114,10 +120,10 @@ function writing(){
   updateWritingPaper();
  };
  $('clear').onclick=()=>{
-  if(drawing||(!strokes.length&&!extraLines.length))return;
-  rememberWork();strokes=[];extraLines=[];updateWritingPaper(true);
+  if(drawing||(!strokes.length&&!extraLines.length&&!hasReadingCorrections()))return;
+  rememberWork();strokes=[];extraLines=[];readingCorrections=emptyReadingCorrections();updateWritingPaper(true);
  };
- $('read').onclick=readAll;
+ bindLiveReading();
 }
 function renderStrokes(canvas,pending=null){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(0,-Number(canvas.dataset.row||0)*72);drawGiven(ctx);for(const l of extraLines){ctx.strokeStyle='#4d4c4b';ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(l.start*72+3,l.row*72);ctx.lineTo(l.end*72-3,l.row*72);ctx.stroke();}if(guide&&phase==='write'){const expected=E.expected(lesson);ctx.strokeStyle='#d4aac0';ctx.fillStyle='#f6e7f080';ctx.setLineDash([3,5]);for(const k of Object.keys(expected.main)){if(E.given(lesson).main[k]!==undefined)continue;const [r,c]=k.split(':').map(Number);ctx.fillRect(c*72+7,r*72+24,58,44);ctx.strokeRect(c*72+7,r*72+24,58,44);}for(const k of Object.keys(expected.notes)){const [r,c]=k.split(':').map(Number);ctx.strokeRect(c*72+12,r*72+2,48,18);}ctx.setLineDash([]);}ctx.strokeStyle='#4d4c4b';ctx.lineWidth=2.8;ctx.lineCap='round';ctx.lineJoin='round';for(const s of [...strokes,...(pending?[pending]:[])]){if(!s.length)continue;ctx.beginPath();ctx.moveTo(...s[0]);for(const p of s.slice(1))ctx.lineTo(...p);ctx.stroke();}ctx.restore();}
 function drawGiven(ctx){
@@ -134,7 +140,7 @@ canvas.onpointermove=e=>{if(id!==e.pointerId||!pending||epoch!==version)return;e
 const end=(e,cancel)=>{if(e.pointerId!==id)return;const s=pending;pending=null;id=null;drawing=false;if(!cancel&&s?.length>1&&epoch===version){rememberWork();strokes.push(s);}if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);renderStrokes(canvas);if($('undo'))$('undo').disabled=!history.length;if($('row-undo'))$('row-undo').disabled=!history.length;save();};canvas.onpointerup=e=>end(e,false);canvas.onpointercancel=e=>end(e,true);canvas.onlostpointercapture=e=>{if(e.pointerId===id)end(e,true);};canvas.oncontextmenu=e=>e.preventDefault();}
 function readAll(){if(drawing){$('read-status').textContent='ペンを はなしてから おしてね。';return;}if(!strokes.length){$('read-status').textContent='とちゅうの けいさんや こたえを かいてね。';return;}recognized=readNotebookInk();recognized.lines.push(...extraLines);if(!Object.keys(recognized.main).length&&!recognized.lines.length){$('read-status').textContent='うまく よめなかったよ。すうじを おおきく、マスに そろえて かいてみてね。';return;}result=null;phase='review';reviewTool='number';refresh();}
 function normalizeText(v){return v.replace(/－|-/g,'−').replace(/[xX*ｘ]/g,'×').replace(/＋/g,'+').replace(/[０-９]/g,x=>String(x.charCodeAt(0)-0xff10));}
-function reviewGrid(){const rows=rowCount(),fixed=E.given(lesson);let html=`<div class="review-grid ${reviewTool==='number'?'':reviewTool==='note'?'edit-notes':'edit-lines'}" id="review-grid" style="--rows:${rows};--cols:${columnCount()}">`;for(let r=0;r<rows;r++)for(let c=0;c<columnCount();c++){const k=E.key(r,c),issue=result?.issues.some(x=>x.key===k),note=recognized.notes[k]||'',number=fixed.main[k]??recognized.main[k]??'';html+=`<div class="review-cell ${issue?'is-issue':''} ${fixed.main[k]!==undefined?'is-given':''}"><input class="note${note.includes('?')?' is-unclear':''}" tabindex="${reviewTool==='note'?0:-1}" data-note="${k}" maxlength="2" inputmode="numeric" value="${escapeAttr(note)}" aria-label="うえから ${r+1}だんめ、ひだりから ${c+1}マスめの ちいさいすうじ"><input class="main${number==='?'?' is-unclear':''}" ${fixed.main[k]!==undefined?'readonly aria-readonly="true"':''} tabindex="${reviewTool==='number'&&fixed.main[k]===undefined?0:-1}" data-main="${k}" maxlength="1" value="${escapeAttr(number)}" aria-label="うえから ${r+1}だんめ、ひだりから ${c+1}マスめの すうじ・しるし"></div>`;}html+=`<svg class="review-lines" viewBox="0 0 ${columnCount()*72} ${rows*72}" aria-hidden="true">${[...fixed.lines,...recognized.lines].map(l=>`<line x1="${l.start*72}" x2="${l.end*72}" y1="${l.row*72}" y2="${l.row*72}"></line>`).join('')}${[...fixed.brackets,...recognized.brackets].map(b=>`<path d="M${b.col*72-14} ${b.row*72+3} Q${b.col*72+6} ${b.row*72+36} ${b.col*72-14} ${(b.row+1)*72-3}"></path>`).join('')}</svg><canvas class="line-canvas" id="line-canvas" width="${columnCount()*72}" height="${rows*72}" aria-label="よみとった せんを なおす ノート"></canvas></div>`;return html;}
+function reviewGrid(){const rows=rowCount(),fixed=E.given(lesson);let html=`<div class="review-grid ${reviewTool==='number'?'':reviewTool==='note'?'edit-notes':'edit-lines'}" id="review-grid" style="--rows:${rows};--cols:${columnCount()}">`;for(let r=0;r<rows;r++)for(let c=0;c<columnCount();c++){const k=E.key(r,c),issue=result?.issues.some(x=>x.key===k),note=recognized.notes[k]||'',number=fixed.main[k]??recognized.main[k]??'';html+=`<div class="review-cell ${issue?'is-issue':''} ${fixed.main[k]!==undefined?'is-given':''}"><input class="note${note.includes('?')?' is-unclear':''}" tabindex="${reviewTool==='note'?0:-1}" data-note="${k}" maxlength="2" inputmode="numeric" value="${escapeAttr(note)}" aria-label="うえから ${r+1}だんめ、ひだりから ${c+1}マスめの ちいさいすうじ"><input class="main${number==='?'?' is-unclear':''}" ${fixed.main[k]!==undefined?'readonly aria-readonly="true"':''} tabindex="${reviewTool==='number'&&fixed.main[k]===undefined?0:-1}" data-main="${k}" maxlength="1" value="${escapeAttr(number)}" aria-label="うえから ${r+1}だんめ、ひだりから ${c+1}マスめの すうじ・しるし"></div>`;}html+=`<svg class="review-lines" viewBox="0 0 ${columnCount()*72} ${rows*72}" aria-hidden="true">${svgWorkLines(recognized)}</svg><canvas class="line-canvas" id="line-canvas" width="${columnCount()*72}" height="${rows*72}" aria-label="よみとった せんを なおす ノート"></canvas></div>`;return html;}
 function escapeAttr(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function review(){const issues=result?.issues||[];$('app').innerHTML=`<section class="card review-card"><h1 class="equation">${lesson.equation} ＝ ？</h1><p class="help">ちがう すうじや「？」は、マスを おして なおしてね。</p><div class="toolbar"><button id="edit-number" aria-pressed="${reviewTool==='number'}">すうじを なおす</button><button id="edit-note" aria-pressed="${reviewTool==='note'}">ちいさい すうじ</button><button id="edit-line" aria-pressed="${reviewTool==='line'}">せんを なおす</button><button id="edit-bracket" hidden aria-pressed="${reviewTool==='bracket'}">わりざんの かたち</button><button id="remove-line">せんを けす</button></div><p class="sub">${reviewTool==='line'?'よみとった ノートの マスの さかいめに、せんを ひいてね。':reviewTool==='bracket'?'わられる かずの ひだりの さかいめを おしてね。' :''}</p><div class="review-view-switch" role="group" aria-label="ノートを きりかえる"><button id="show-original" aria-pressed="false">かいた ノート</button><button id="show-reading" aria-pressed="true">よみとった ノート</button></div><div id="review-columns" class="review-columns" data-view="reading"><div class="original-view"><h2 class="review-heading">じぶんで かいた ノート</h2>${canvasHTML('original')}</div><div class="reading-view"><h2 class="review-heading">よみとった ノート（なおせるよ）</h2>${paperFrame(reviewGrid(),'よみとった ノート。よこに うごかせるよ')}</div></div><div id="grade-status" class="status ${result?.ok?'good':''}" role="status">${result?.ok?'<h2>ぜんぶ できたね！ 🌸</h2><p>とちゅうの すうじも たしかめたよ。</p>':result?'<h2>もういちど たしかめよう</h2><p>よみとりが ちがうときは、すうじや せんを なおしてね。<br>けいさんを やりなおすときは「てがきに もどる」を おしてね。</p><ul class="issue-list">'+[...new Set(issues.map(x=>x.message))].map(m=>'<li>'+m+'</li>').join('')+'</ul><p class="muted">この ノートでは、だんを マスに そろえた かきかたで たしかめるよ。</p>':''}</div><div class="grade-controls"><button id="back-write">← てがきに もどる</button><button id="grade" class="primary">この ノートで さいてん</button>${result?.ok?(calculatorMode?'<button id="new-calculation" class="primary">べつの けいさんへ →</button>':'<button id="reward" class="primary">ごほうびの え →</button>'):''}</div><p class="sub">${calculatorMode?'よみとりは なんどでも なおせるよ。':'よみとりを なおしても、ごほうびは へらないよ。'}</p></section>`;renderStrokes($('original'));
 for(const view of ['original','reading'])$('show-'+view).onclick=()=>{
@@ -143,11 +149,15 @@ for(const view of ['original','reading'])$('show-'+view).onclick=()=>{
  $('show-reading').setAttribute('aria-pressed',String(view==='reading'));
 };
 for(const type of ['main','note'])document.querySelectorAll(`[data-${type}]`).forEach(input=>input.oninput=()=>{const map=type==='main'?'main':'notes',k=input.dataset[type];if(type==='main'&&E.given(lesson).main[k]!==undefined)return;const v=normalizeText(input.value).replace(type==='note'?/[^0-9?]/g:/[^0-9+−×?]/g,'');input.value=v;input.classList.toggle('is-unclear',v.includes('?'));if(v)recognized[map][k]=v;else delete recognized[map][k];result=null;$('grade-status').textContent='なおした ノートで、もういちど さいてんできるよ。';if($('reward'))$('reward').disabled=true;if($('new-calculation'))$('new-calculation').hidden=true;save();});
-$('edit-number').onclick=()=>{reviewTool='number';refresh(false);};$('edit-note').onclick=()=>{reviewTool='note';refresh(false);};$('edit-line').onclick=()=>{reviewTool='line';refresh(false);};$('edit-bracket').onclick=()=>{reviewTool='bracket';refresh(false);};$('remove-line').onclick=()=>{if(reviewTool==='bracket')recognized.brackets.pop();else recognized.lines.pop();result=null;refresh(false);};$('back-write').onclick=()=>{phase='write';result=null;refresh();};$('grade').onclick=()=>{result=E.gradeWork(lesson,recognized,rowCount());if(result.ok&&!calculatorMode&&!credited){progress++;credited=true;}refresh(false);$('grade-status').scrollIntoView({block:'nearest',behavior:'smooth'});};if($('reward'))$('reward').onclick=()=>{if(!result?.ok)return;phase='reward';refresh();};if($('new-calculation'))$('new-calculation').onclick=returnToCalculator;attachLineEditor();}
-function attachLineEditor(){const canvas=$('line-canvas');let start=null,id=null;const pos=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};};canvas.onpointerdown=e=>{if(id!==null)return;e.preventDefault();id=e.pointerId;start=pos(e);canvas.setPointerCapture(id);};canvas.onpointerup=e=>{if(e.pointerId!==id)return;const end=pos(e);id=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(reviewTool==='bracket')recognized.brackets.push({row:Math.max(0,Math.min(rowCount()-1,Math.floor(end.y/72))),col:Math.max(1,Math.min(columnCount()-1,Math.round(end.x/72)))});else{const left=Math.max(0,Math.floor(Math.min(start.x,end.x)/72)),right=Math.min(columnCount(),Math.ceil(Math.max(start.x,end.x)/72));if(right>left)recognized.lines.push({row:Math.max(0,Math.min(rowCount(),Math.round((start.y+end.y)/144))),start:left,end:right});}start=null;result=null;refresh(false);};canvas.onpointercancel=()=>{id=null;start=null;};}
+$('edit-number').onclick=()=>{reviewTool='number';refresh(false);};$('edit-note').onclick=()=>{reviewTool='note';refresh(false);};$('edit-line').onclick=()=>{reviewTool='line';refresh(false);};$('edit-bracket').onclick=()=>{reviewTool='bracket';refresh(false);};$('remove-line').onclick=()=>{if(reviewTool==='bracket')recognized.brackets.pop();else recognized.lines.pop();result=null;refresh(false);};$('back-write').onclick=()=>{phase='write';result=null;refresh();};$('grade').onclick=()=>{gradeRecognizedWork();refresh(false);$('grade-status').scrollIntoView({block:'nearest',behavior:'smooth'});};if($('reward'))$('reward').onclick=()=>{if(!result?.ok)return;phase='reward';refresh();};if($('new-calculation'))$('new-calculation').onclick=returnToCalculator;attachLineEditor();}
+function gradeRecognizedWork(){
+ result=E.gradeWork(lesson,recognized,rowCount());
+ if(result.ok&&!calculatorMode&&!credited){progress++;credited=true;}
+}
+function attachLineEditor(onEdit=()=>refresh(false)){const canvas=$('line-canvas');let start=null,id=null;const pos=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};};canvas.onpointerdown=e=>{if(id!==null)return;e.preventDefault();id=e.pointerId;start=pos(e);canvas.setPointerCapture(id);};canvas.onpointerup=e=>{if(e.pointerId!==id)return;const end=pos(e);id=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(reviewTool==='bracket')recognized.brackets.push({row:Math.max(0,Math.min(rowCount()-1,Math.floor(end.y/72))),col:Math.max(1,Math.min(columnCount()-1,Math.round(end.x/72)))});else{const left=Math.max(0,Math.floor(Math.min(start.x,end.x)/72)),right=Math.min(columnCount(),Math.ceil(Math.max(start.x,end.x)/72));if(right>left)recognized.lines.push({row:Math.max(0,Math.min(rowCount(),Math.round((start.y+end.y)/144))),start:left,end:right});}start=null;result=null;onEdit();};canvas.onpointercancel=()=>{id=null;start=null;};}
 window.addEventListener('pagehide',save);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
-function finished(){const count=progress%12===0&&progress>0?12:progress%12;$('app').innerHTML=`<section class="card reward-card"><h1>${phase==='reward'?'ひっさんを ぜんぶ がんばったね！':'わたしの できたえほん'}</h1><p class="sub">3もんで ひとつ、12もんで えが かんせいするよ。</p>${picture(count)}<p>${count} / 12もん ・ かんせい ${Math.floor(progress/12)}かい</p><div class="actions"><button id="setup" class="primary">べつの もんだいへ →</button>${lesson?'<button id="return">ノートに もどる</button>':''}</div></section>`;$('setup').onclick=()=>{phase='setup';refresh();};if($('return'))$('return').onclick=()=>{phase=recognized?'review':'write';refresh();};}
+function finished(){const count=progress%12===0&&progress>0?12:progress%12;$('app').innerHTML=`<section class="card reward-card"><h1>${phase==='reward'?'ひっさんを ぜんぶ がんばったね！':'わたしの できたえほん'}</h1><p class="sub">3もんで ひとつ、12もんで えが かんせいするよ。</p>${picture(count)}<p>${count} / 12もん ・ かんせい ${Math.floor(progress/12)}かい</p><div class="actions"><button id="setup" class="primary">べつの もんだいへ →</button>${lesson?'<button id="return">ノートに もどる</button>':''}</div></section>`;$('setup').onclick=()=>{phase='setup';refresh();};if($('return'))$('return').onclick=()=>{phase=fingerNotebook?'write':recognized?'review':'write';refresh();};}
 if(calculatorMode){
  document.title='じぶんで とく | ひっさんノート';
  document.body.classList.add('calculator-notebook');

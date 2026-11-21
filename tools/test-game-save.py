@@ -11,7 +11,7 @@ jsc = Path('/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpe
 runtime = shutil.which('node') or (str(jsc) if jsc.exists() else None)
 if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
-source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/full-notebook.js'])
+source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/notebook-live.js','prototypes/full-notebook.js'])
 harness = r'''
 const testQuery={touch:'0'};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
@@ -22,8 +22,9 @@ const timers=new Map();
 function setTimeout(fn){const id=++timerId;timers.set(id,fn);return id;}
 function clearTimeout(id){timers.delete(id);}
 function flushTimers(){const pending=[...timers.values()];timers.clear();for(const fn of pending)fn();}
-function node(id){if(!nodes.has(id)){let nestedHTML='';const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:nestedHTML;},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}else nestedHTML=html;}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
-const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||appHTML.includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of appHTML.matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
+function node(id){if(!nodes.has(id)){let nestedHTML='';const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},select(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){this.open=true;},close(){this.open=false;},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:nestedHTML;},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}else nestedHTML=html;}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
+const markup=()=>appHTML+(nodes.get('live-edit-grid')?.innerHTML||'');
+const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||markup().includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of markup().matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
 '''
@@ -145,14 +146,15 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  down(11,216,432);up(11);check(extraLines.length===0&&strokes.length===1,'zoomed eraser missed rule or removed digit');
  $('undo-bottom').onclick();check(extraLines[0].row===5&&touchViewState.scale===2&&$('paper')===paper,'bottom undo lost zoom or failed to restore the rule');
  $('touch-reset').onclick();
- $('pen').onclick();readAll();check(phase==='review' &&recognized.lines[0].row===5,'finger trial reading failed');
- $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
+ $('pen').onclick();$('open-reading').onclick();
+ check(phase==='write'&&$('reading-dialog').open&&recognized.lines[0].row===5&&$('mini-reading').innerHTML.includes('<line'),'finger trial did not preview the rule');
+ $('reading-close').onclick();check(!$('reading-dialog').open&&$('paper')===paper&&strokes.length===1,'return from editor lost ink or canvas');
 `)(storage,check);
 check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');
 const easyHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'+',a:'1',b:'2'};");
 new Function('storage','check',easyHarness+SOURCE+`
  check(columnCount()===4&&rowCount()===5,'easy worksheet did not get a compact grid');
- check(appHTML.indexOf('class="notebook-dock"')<appHTML.indexOf('id="clear"')&&appHTML.indexOf('id="clear"')<appHTML.indexOf('id="read"'),'read/clear not in bottom dock');
+ check($('open-reading')&&$('mark-work')&&$('clear')&&!$('read'),'old reading button is on the normal notebook');
  const canvas=$('touch-viewport');
  const event=(id,x,y)=>({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
  const state=touchViewState,factor=Math.min(canvas.clientWidth/$('paper').width,canvas.clientHeight/$('paper').height);
@@ -160,14 +162,21 @@ new Function('storage','check',easyHarness+SOURCE+`
  canvas.onpointerdown(inkEvent(1,153,250));canvas.onpointermove(inkEvent(1,181,264));canvas.onpointerup(inkEvent(1,206,269));
  check(phase==='write'&&timers.size===1,'live reading was not scheduled on release');
  flushTimers();
- check($('ink-questions').innerHTML.includes('data-cell="3:2"')&&recognized===null&&result===null,'ambiguous ink not shown before reading or was graded');
+ check($('ink-questions').innerHTML.includes('data-cell="3:2"')&&$('mini-reading').innerHTML.includes('mini-cell-question')&&recognized.main['3:2']==='?'&&result===null,'ambiguous ink not shown on both boards or was graded');
+ $('mark-work').onclick();check($('reading-dialog').open&&result===null,'grading guessed an unresolved value');
+ const cell=document.querySelectorAll('[data-main]').find(input=>input.dataset.main==='3:2');
+ cell.value='3';cell.oninput();
+ check(recognized.main['3:2']==='3'&&!$('ink-questions').innerHTML&&strokes.length===1,'correction did not clear both markers or replaced the ink');
+ $('reading-close').onclick();$('mark-work').onclick();
+ check(phase==='write'&&result.ok&&$('live-grade').innerHTML.includes('ぜんぶ できたね'),'grading navigated away or ignored the correction');
+ canvas.onpointerdown(inkEvent(2,98,252));canvas.onpointerup(inkEvent(2,98,272));flushTimers();
+ check(recognized.main['3:2']==='3'&&recognized.main['3:1']==='1'&&result===null,'new ink elsewhere erased the correction or kept the old grade');
+ canvas.onpointerdown(inkEvent(3,180,248));canvas.onpointerup(inkEvent(3,180,275));flushTimers();
+ check(!readingCorrections.main['3:2'],'old correction survived handwriting in the same cell');
  $('undo-bottom').onclick();flushTimers();
- check(!$('ink-questions').innerHTML,'question remained after undo');
- canvas.onpointerdown(inkEvent(2,180,248));canvas.onpointerup(inkEvent(2,180,275));flushTimers();
- check(!$('ink-questions').innerHTML,'a clear 1 was marked as ambiguous');
- $('read').onclick();check(phase==='review'&&recognized.main['3:2']==='1','review disagreed with live recognition');
- $('show-original').onclick();check($('review-columns').dataset.view==='original','phone cannot switch to original ink');
- $('show-reading').onclick();check($('review-columns').dataset.view==='reading','phone cannot return to reading');
+ check(recognized.main['3:2']==='3','undo did not recover the correction');
+ $('clear').onclick();flushTimers();
+ check(!Object.keys(recognized.main).length&&!$('ink-questions').innerHTML,'clear left recognized digits');
 `)(storage,check);
 
 
@@ -198,13 +207,26 @@ runNormal(`
  $('touch-viewport').onpointerdown(e);$('touch-viewport').onpointerup(e);
  check(savedGame.rules.length===0,'normal game eraser not saved');
  $('undo').onclick();check(savedGame.rules[0].row===5,'normal game undo not saved');
- readAll();recognized=E.expected(lesson);for(const k of Object.keys(E.given(lesson).main))delete recognized.main[k];review();const count=progress;$('grade').onclick();
- check(result.ok&&credited&&progress===count+1,'normal game reward credit failed');
+ extraLines=[];$('open-reading').onclick();
+ const expected=E.expected(lesson),fixed=E.given(lesson);
+ for(const type of ['main','notes']){
+  const nodes=document.querySelectorAll(type==='main'?'[data-main]':'[data-note]');
+  for(const el of nodes){
+   const key=el.dataset[type==='main'?'main':'note'];
+   if(type==='main'&&fixed.main[key]!==undefined)continue;
+   const value=expected[type][key]||'';
+   if(value!==(recognized[type][key]||'')){el.value=value;el.oninput();}
+  }
+ }
+ check(Object.keys(savedGame.readingCorrections.main).length>0,'live edits were not saved before grading');
+ $('reading-close').onclick();
+ const count=progress;$('mark-work').onclick();
+ check(result.ok&&credited&&progress===count+1&&phase==='write','normal game reward credit failed');
 `);
 runNormal(`
- $('resume').onclick();const count=progress;check(result.ok&&phase==='review','normal graded review not restored');
- $('grade').onclick();check(progress===count,'normal game regrade duplicated credit');
- $('back-write').onclick();check($('touch-viewport')&&strokes.length===1,'normal review return lost handwriting');
+ $('resume').onclick();const count=progress;check(result.ok&&phase==='write'&&hasReadingCorrections(),'normal live corrections and grade not restored');
+ $('mark-work').onclick();check(progress===count,'normal game regrade duplicated credit');
+ $('open-reading').onclick();$('reading-close').onclick();check($('touch-viewport')&&strokes.length===1,'normal editor return lost handwriting');
 `);
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''

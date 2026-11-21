@@ -27,10 +27,10 @@ function createInkReader(){
   scores.set(first,{strokes,digitsOnly,text});
   return text;
  }
- return (strokes,rows,cols)=>read(strokes,rows,cols,{digitsOnly:true},readCached);
+ return (strokes,rows,cols,sources)=>read(strokes,rows,cols,{digitsOnly:true,sources},readCached);
 }
 function readNote(strokes,readDigit){if(!strokes.length)return '';const ordered=strokes.map(s=>({s,b:bounds([s])})).sort((a,b)=>a.b.x0-b.b.x0);const groups=[];for(const o of ordered){const last=groups[groups.length-1];if(last&&o.b.x0<=last.x1+3){last.strokes.push(o.s);last.x1=Math.max(last.x1,o.b.x1);}else groups.push({strokes:[o.s],x1:o.b.x1});}return groups.map(g=>readDigit(g.strokes,true)).join('');}
-function read(strokes,rows,cols=COLS,{digitsOnly=false}={},readDigit=readGlyph){const main={},notes={},lines=[],brackets=[],groups={};
+function read(strokes,rows,cols=COLS,{digitsOnly=false,sources}={},readDigit=readGlyph){const main={},notes={},lines=[],brackets=[],groups={};
  const items=strokes.filter(s=>s.length>=2).map(stroke=>{const b=bounds([stroke]),w=b.x1-b.x0,h=b.y1-b.y0;return {stroke,b,w,h,cx:(b.x0+b.x1)/2/CELL,cy:(b.y0+b.y1)/2/CELL};});
  // A short horizontal cap can belong to a large digit (notably a two-stroke 5).
  // Attach it before deciding that it is a rule or a tiny carry/borrow digit.
@@ -58,7 +58,10 @@ function read(strokes,rows,cols=COLS,{digitsOnly=false}={},readDigit=readGlyph){
   const small=!anchor&&h<CELL*.33&&(b.y1/CELL-r)<.37;
   const k=key(r,c),g=groups[k]||(groups[k]={main:[],note:[]});g[small?'note':'main'].push(stroke);
  }
- for(const [k,g]of Object.entries(groups)){if(g.main.length)main[k]=readDigit(g.main,digitsOnly);if(g.note.length)notes[k]=readNote(g.note,readDigit);}
+ for(const [k,g]of Object.entries(groups)){
+  if(g.main.length){main[k]=readDigit(g.main,digitsOnly);if(sources)sources.main[k]=g.main;}
+  if(g.note.length){notes[k]=readNote(g.note,readDigit);if(sources)sources.notes[k]=g.note;}
+ }
  return {main,notes,lines,brackets};
 }
 function divisionShift(model){return model.op==='/'?Math.max(0,String(model.b).length-2):0;}
