@@ -34,3 +34,14 @@
 @media(max-width:600px){.row-dialog{padding:14px 10px}.row-top{flex-wrap:wrap}.row-top h2{font-size:18px}.row-navigation button{font-size:14px}.row-dialog .sub{font-size:13px}}
 
 @media(max-width:600px){.row-ink-tools button{font-size:13px;padding:8px 4px}}
+
+/* Finger gesture trial: only the paper transforms; the equation and tools stay legible. */
+.touch-notebook{border:2px solid #b8d5e3;border-radius:14px;background:#fff}
+.touch-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:#fff4cb;border-bottom:1px solid #e8d58f;position:sticky;top:0;z-index:3}
+.touch-heading strong{font-size:clamp(20px,4vw,27px);overflow-wrap:anywhere}.touch-heading span{font-size:13px;white-space:nowrap}
+.touch-help{margin:0;padding:8px 12px;font-size:14px;line-height:1.5;background:#edf8ff}
+.touch-viewport{height:clamp(300px,60svh,620px);width:100%;overflow:hidden;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;background:#f1f3f5;cursor:crosshair}
+.touch-stage{position:absolute;left:0;top:0;transform-origin:0 0;background-color:white;outline:1px solid #acc8d6;pointer-events:none}
+.touch-stage canvas{display:block;width:100%;height:100%}.touch-status{margin:0;padding:8px 12px;background:white;font-size:13px;min-height:40px}
+
+.touch-heading button{min-width:100px;min-height:48px;font-size:14px;padding:8px;background:white}

@@ -11,13 +11,14 @@ jsc = Path('/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpe
 runtime = shutil.which('node') or (str(jsc) if jsc.exists() else None)
 if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
-source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/full-notebook.js'])
+source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/full-notebook.js'])
 harness = r'''
 const testQuery={};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
+class ResizeObserver{constructor(fn){} observe(){} disconnect(){}}
 const context=new Proxy({}, {get(){return ()=>{};}});
 const nodes=new Map();let appHTML='';
-function node(id){if(!nodes.has(id)){const v={value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},classList:{add(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
+function node(id){if(!nodes.has(id)){const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},classList:{add(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
 const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||appHTML.includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of appHTML.matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
@@ -98,6 +99,24 @@ const before=JSON.stringify([...values]);
 const calculatorHarness=HARNESS.replace('const testQuery={};',"const testQuery={mode:'calculator',op:'+',a:'27',b:'15'};");
 new Function('storage','check',calculatorHarness+SOURCE+`\nsave();check(calculatorMode&&phase==='write','calculator initialization');`)(storage,check);
 check(JSON.stringify([...values])===before,'calculator modified game saves');
+
+const fingerHarness=HARNESS.replace('const testQuery={};',"const testQuery={mode:'calculator',op:'*',a:'23',b:'45',touch:'1'};");
+new Function('storage','check',fingerHarness+SOURCE+`\n
+ check(touchTrial&&phase==='write'&&$('touch-reset'),'finger trial initialization');
+ const down=(id,x,y)=>$('touch-viewport').onpointerdown({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
+ const move=(id,x,y)=>$('touch-viewport').onpointermove({pointerId:id,clientX:x,clientY:y,preventDefault(){}});
+ const up=id=>$('touch-viewport').onpointerup({pointerId:id,preventDefault(){}});
+ down(1,300,240);move(1,300,270);down(2,400,240);move(2,430,240);up(2);up(1);
+ check(strokes.length===0&&history.length===0,'pinch left accidental ink');
+ $('touch-reset').onclick();
+ down(3,300,240);move(3,300,275);up(3);check(strokes.length===1,'finger ink not committed');
+ $('rule-tool').onclick();down(4,200,360);check(extraLines.length===0,'rule changed before release');down(5,300,360);up(5);up(4);check(extraLines.length===0,'pinch in rule mode added rule');
+ down(6,200,360);up(6);check(extraLines[0].row===5&&tool==='pen','finger rule not committed');
+ $('erase').onclick();down(7,300,250);down(8,400,250);up(8);up(7);check(strokes.length===1,'pinch erased completed ink');
+ $('pen').onclick();readAll();check(phase==='review'&&recognized.lines[0].row===5,'finger trial reading failed');
+ $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
+`)(storage,check);
+check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''
 script = 'const SOURCE='+json.dumps(source)+';\nconst HARNESS='+json.dumps(harness)+';\n'+tests
