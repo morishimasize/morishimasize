@@ -1,5 +1,5 @@
 /* Local, template-based digit recognition. Original implementation using
-   normalized stroke point clouds and symmetric nearest-neighbour distances.
+   normalized ink position and local stroke direction.
    No network requests, trained service, or access to the exercise answer. */
 (function(root){
 'use strict';
@@ -42,18 +42,68 @@ variants[9].push(
  [[[91,22],[67,7],[30,8],[20,21],[20,40],[39,43],[63,34],[75,29],[68,51],[58,74],[48,98]]],
  [[[86,26],[66,11],[34,8],[18,23],[20,41],[40,45],[63,33],[74,25],[64,58],[48,95]]]
 );
+// Common forms with different starting points, separate strokes, or open loops.
+variants[0].push([[[67,15],[45,9],[23,22],[18,48],[24,79],[40,94],[63,89],[79,65],[81,42],[72,26]]]);
+variants[2].push([[[15,28],[29,11],[56,10],[74,23],[73,39],[59,53],[40,67],[17,87],[43,87],[77,94]]]);
+variants[3].push(
+ [[[18,15],[42,9],[67,13],[79,27],[68,44],[46,48]],[[47,48],[69,51],[81,67],[74,86],[55,94],[31,94],[15,81]]],
+ [[[20,10],[43,9],[61,14],[68,24],[64,37],[42,51],[53,59],[60,71],[57,82],[43,92],[25,94]]]
+);
+variants[4].push(
+ [[[61,10],[18,60],[65,60],[65,94]]],
+ [[[46,9],[19,62],[79,62]],[[69,7],[67,94]]],
+ [[[65,9],[21,61],[65,62],[65,10],[66,94]]]
+);
+variants[6].push([[[67,9],[45,19],[26,43],[18,67],[26,88],[43,94],[61,88],[69,73],[60,55],[44,52],[25,62]]]);
+variants[7].push([[[17,14],[53,11],[79,13],[65,41],[49,71],[35,95]]]);
+variants[8].push([[[47,49],[35,40],[30,26],[36,14],[48,9],[62,14],[69,27],[63,41],[47,49],[32,60],[24,76],[32,90],[47,96],[67,90],[76,76],[67,62],[47,49]]]);
+variants[9].push([[[73,39],[58,50],[36,48],[22,36],[22,21],[38,10],[58,10],[73,21],[78,42],[72,68],[57,88],[43,94]]]);
+
 function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
 function normalize(strokes){
- const segments=[];let total=0;const points=strokes.flat();if(points.length<2)return null;
- let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
- for(const p of points){minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]);maxY=Math.max(maxY,p[1]);}
- const w=maxX-minX,h=maxY-minY,scale=Math.max(w,h);if(scale<8)return null;
- for(const s of strokes)for(let i=1;i<s.length;i++){const len=dist(s[i-1],s[i]);if(len>0){segments.push({a:s[i-1],b:s[i],start:total,len});total+=len;}}
- if(!total||total/scale>12)return null;
- const sx=Math.max(w,scale*.15),sy=Math.max(h,scale*.15);const cloud=[];for(let i=0;i<64;i++){const pos=(i+.5)*total/64;const seg=segments.find(s=>pos<=s.start+s.len)||segments[segments.length-1];const t=Math.max(0,Math.min(1,(pos-seg.start)/seg.len));cloud.push([(seg.a[0]+(seg.b[0]-seg.a[0])*t-(minX+maxX)/2)/sx,(seg.a[1]+(seg.b[1]-seg.a[1])*t-(minY+maxY)/2)/sy]);}
+ const segments=[];
+ let total=0,minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ for(const stroke of strokes){
+  // A tap does not belong to a digit's outline.
+  if(stroke.length<2)continue;
+  for(let i=1;i<stroke.length;i++){
+   const a=stroke[i-1],b=stroke[i],len=dist(a,b);
+   if(!len)continue;
+   minX=Math.min(minX,a[0],b[0]);maxX=Math.max(maxX,a[0],b[0]);
+   minY=Math.min(minY,a[1],b[1]);maxY=Math.max(maxY,a[1],b[1]);
+   segments.push({a,b,start:total,len});
+   total+=len;
+  }
+ }
+ const w=maxX-minX,h=maxY-minY,scale=Math.max(w,h);
+ if(!total||scale<8||total/scale>12)return null;
+ const sx=Math.max(w,scale*.15),sy=Math.max(h,scale*.15);
+ const centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;
+ const cloud=[];
+ let segmentIndex=0;
+ for(let i=0;i<64;i++){
+  const position=(i+.5)*total/64;
+  while(position>segments[segmentIndex].start+segments[segmentIndex].len)segmentIndex++;
+  const {a,b,start,len}=segments[segmentIndex],t=(position-start)/len;
+  const dx=(b[0]-a[0])/sx,dy=(b[1]-a[1])/sy,directionLength=Math.hypot(dx,dy);
+  cloud.push([(a[0]-centerX)/sx+t*dx,(a[1]-centerY)/sy+t*dy,dx/directionLength,dy/directionLength]);
+ }
  return {cloud,ratio:w/Math.max(h,1),length:total/scale};
 }
-function cloudDistance(a,b){let sum=0;for(const p of a){let nearest=Infinity;for(const q of b)nearest=Math.min(nearest,dist(p,q));sum+=nearest;}return sum/a.length;}
+function cloudDistance(a,b){
+ let sum=0;
+ for(const [x,y,ux,uy] of a){
+  let nearest=Infinity;
+  for(const [otherX,otherY,vx,vy] of b){
+   const dx=x-otherX,dy=y-otherY;
+   // Unsigned direction so a digit can be drawn in either direction or stroke order.
+   const direction=1-Math.min(1,Math.abs(ux*vx+uy*vy));
+   nearest=Math.min(nearest,dx*dx+dy*dy+.008*direction);
+  }
+  sum+=Math.sqrt(nearest);
+ }
+ return sum/a.length;
+}
 const templates=[];
 for(const [digit,strokes] of Object.entries(shapes)){for(const ss of [strokes,...(variants[digit]||[])]){for(const slant of [-.13,0,.13])templates.push({digit,...normalize(ss.map(s=>s.map(([x,y])=>[x+slant*(y-50),y])))});}}
 function compare(input,template){
@@ -61,9 +111,10 @@ function compare(input,template){
  const ratio=Math.abs(Math.min(input.ratio,1.5)-Math.min(template.ratio,1.5));
  return shape+ratio*.07+Math.abs(input.length-template.length)*.015;
 }
-function recognize(strokes){const input=normalize(strokes);if(!input)return [];
+function rank(input){if(!input)return [];
  const scores=new Map();for(const t of templates){const score=compare(input,t);scores.set(t.digit,Math.min(scores.get(t.digit)??Infinity,score));}
  return [...scores].map(([digit,distance])=>({digit,distance})).sort((a,b)=>a.distance-b.distance).slice(0,3);
 }
-root.DigitReader={recognize,shapes,normalize,compare};
+function recognize(strokes){return rank(normalize(strokes));}
+root.DigitReader={recognize,rank,shapes,normalize,compare};
 })(typeof globalThis==='object'?globalThis:this);

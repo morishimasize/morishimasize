@@ -39,6 +39,10 @@ size={width:700,height:620};c.resize();ok(near(view.factor,620/576)&&state.x>0,'
 c.down(9,{x:200,y:200});c.down(10,{x:300,y:200});c.down(11,{x:400,y:200});c.up(9);c.move(10,{x:250,y:250});c.up(10);c.up(11);ok(commits.length===3,'third finger never writes');
 c.down(12,{x:200,y:200});c.move(12,{x:210,y:210});c.resize();c.up(12);ok(commits.length===3,'resize cancels unfinished ink');
 c.reset();const count=commits.length;c.down(13,{x:5,y:200});c.move(13,{x:5,y:300});c.up(13);ok(commits.length===count,'gray margin wrote on notebook edge');
+c.down(14,{x:300,y:230});c.up(14,false,{x:300,y:250});
+ok(commits.length===count+1&&commits[count].length===2&&commits[count][1][1]>commits[count][0][1],'fast stroke retains release point without a move event');
+c.down(15,{x:300,y:230});c.up(15,true,{x:300,y:250});
+ok(commits.length===count+1,'cancelled release does not add ink');
 // Gray rails must never capture touch or prevent the browser's native scroll.
 let captured=false,prevented=0;const deltas=[];
 const rail={setPointerCapture(){captured=true;},hasPointerCapture(){return captured;},releasePointerCapture(){captured=false;}};

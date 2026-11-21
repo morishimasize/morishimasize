@@ -2,7 +2,11 @@
 'use strict';
 let rowEditorOpen=false,editRow=3,extraLines=[];
 function rememberWork(){history.push({strokes:strokes.slice(),rules:extraLines.slice()});}
-function undoWork(){if(history.length){const previous=history.pop();strokes=previous.strokes;extraLines=previous.rules;}refresh(false);}
+function undoWork(){
+ if(history.length){const previous=history.pop();strokes=previous.strokes;extraLines=previous.rules;}
+ if(fingerNotebook&&phase==='write')updateWritingPaper();
+ else refresh(false);
+}
 // Prefer a nearby placed rule so erasing it does not also remove adjacent digits.
 function eraseWorkAt(p){
  let nearest=-1,distance=18;

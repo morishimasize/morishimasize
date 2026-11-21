@@ -57,13 +57,7 @@ body.answer-mode .back-btn{padding:8px 15px;}
 .lesson-explanation.is-overview{background:#FFF4D8;border-color:#FFC339;}
 .answer-ribbon{background:#FFE3EF;border:3px solid #FFF;box-shadow:0 4px 0 #EEA9C6;}
 button:focus-visible,.lesson-board-viewport:focus-visible{outline:4px solid #236DAD;outline-offset:5px;}
-@media(min-width:701px) and (min-height:850px) and (orientation:portrait){
- body:not(.answer-mode) #app{height:calc(100vh - max(46px,env(safe-area-inset-top)) - max(28px,env(safe-area-inset-bottom)) - 16px);height:calc(100svh - max(46px,env(safe-area-inset-top)) - max(28px,env(safe-area-inset-bottom)) - 16px);}
-}
 @media(max-width:1049px){.sticker-bow{display:none;}.sticker-pencil{top:-10px;right:6px;width:62px;height:94px;}.sticker-strawberry{left:12px;font-size:58px;}}
-@media(min-width:701px) and (orientation:landscape) and (max-height:850px){
- .brand{margin:6px auto 16px;}.brand h1{font-size:38px;padding:5px 24px;}.brand p{font-size:18px;}.card.notebook{gap:14px;padding-top:22px;padding-bottom:24px;}.card .num-box{height:86px;}.card .op-btn{width:60px;height:60px;}.card .key{height:60px;}.card .key-del,.card .key-clr{height:48px;}.card .calc-btn{height:64px;}
-}
 @media(max-width:700px){
  body{padding-top:max(36px,env(safe-area-inset-top));}.brand{padding:0 40px;margin:8px auto 20px;}.brand h1{font-size:27px;padding:7px 12px;margin-bottom:12px;border-width:2px;outline-width:4px;}.brand p{font-size:17px;}.sticker-strawberry{left:-1px;top:4px;font-size:37px;}.sticker-pencil{right:-2px;top:-5px;width:43px;height:66px;}
  .notebook{border-width:5px;border-radius:28px;}.card.notebook{padding:24px 14px 25px 29px;}.notebook::before{left:-7px;top:30px;bottom:20px;width:22px;background-size:22px 68px;}.notebook::after{left:22px;width:58px;height:21px;top:-13px;}.number-field label{font-size:13px;}.op-btn{width:56px;height:56px;}.op-group{gap:12px;}.key{border-radius:16px;}.calc-btn{font-size:23px;}.answer-book{padding:24px 14px 22px 26px;}.lesson-explanation{border-radius:23px;}.lesson-heading h2{font-size:22px;}.lesson-controls{padding:9px;gap:7px;}.lesson-controls button{font-size:20px;min-height:58px;}#lesson-count{font-size:14px;padding:7px 6px;}.lesson-math{padding:9px 7px;}
@@ -87,4 +81,70 @@ body[data-calculator-mode="answer"]:not(.answer-mode) .key:nth-child(even):not(.
 body[data-calculator-mode="practice"] .brand .mode-heading{color:#963360;border-color:#ed79ae;background:#fff5fa}
 body[data-calculator-mode="practice"] .brand .input-subtitle{color:#963360}
 @media(max-width:700px){.brand .mode-heading{font-size:27px;padding:10px 12px}.brand .input-subtitle{font-size:15px}}
-@media(max-width:370px){.brand{padding-left:28px;padding-right:28px}.brand .mode-heading{font-size:24px;padding:10px 9px}.brand .input-subtitle{font-size:14px}}
+
+/* Keep the equation, keypad and next action together on the input screen. */
+#input-card[hidden] { display:none; }
+body:not(.answer-mode) {
+  padding: max(34px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+    max(17px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+.brand {
+  max-width:900px;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items:center;
+  column-gap:8px;
+  margin:0 auto 18px;
+  padding:0;
+}
+.brand .home-link { grid-column:1; justify-self:start; align-self:center; z-index:1; white-space:nowrap; }
+.brand .mode-heading { grid-column:2; margin:0; }
+.brand .input-subtitle { grid-column:1 / -1; margin-top:12px; }
+.brand .sticker-strawberry { display:none; }
+.brand .sticker-pencil { right:8px; top:0; width:53px; height:78px; }
+#input-card { margin-bottom:0; }
+#input-card .op-group { width:100%; max-width:355px; justify-content:space-between; }
+#input-card .keypad { grid-template-columns:repeat(5,minmax(0,1fr)); }
+#input-card .key { min-width:0; padding-inline:0; }
+#input-card .key-del, #input-card .key-clr { margin-top:0; }
+
+@media (max-width:700px) {
+  body:not(.answer-mode) { padding-top:max(16px,env(safe-area-inset-top)); }
+  body:not(.answer-mode)::before { height:8px; border-bottom-width:2px; }
+  .brand { grid-template-columns:auto minmax(0,1fr); margin-bottom:14px; }
+  .brand .home-link { font-size:13px; padding-inline:7px; }
+  .brand .mode-heading { font-size:clamp(18px,5.5vw,27px); padding:6px 8px; }
+  .brand .input-subtitle, .brand .sticker-pencil { display:none; }
+  #input-card { padding:14px 12px 15px 18px; gap:11px; }
+  #input-card .formula-bar { gap:5px; }
+  #input-card .number-field label { margin-bottom:3px; }
+  #input-card .num-box { height:clamp(48px,10svh,76px); font-size:clamp(23px,6vw,38px); padding:0; }
+  #input-card #current-op { padding-top:19px; }
+  #input-card .op-group { gap:5px; }
+  #input-card .op-btn { width:clamp(48px,13vw,61px); height:clamp(48px,8.7svh,60px); }
+  #input-card .keypad { gap:clamp(5px,1.6vw,9px); }
+  #input-card .key { height:clamp(48px,8.8svh,62px); }
+  #input-card .calc-btn { height:clamp(56px,9.2svh,66px); }
+  #input-card .em { font-size:14px; }
+}
+@media (min-width:620px) and (orientation:landscape) and (max-height:850px) {
+  #input-card { display:grid; grid-template-columns:minmax(0, .85fr) minmax(0,1.15fr); align-items:center; gap:12px 26px; padding:20px 24px; }
+  #input-card .formula-bar, #input-card .op-group, #input-card .calc-btn, #input-card .em { grid-column:1; justify-self:center; }
+  #input-card .keypad { grid-column:2; grid-row:1 / span 3; }
+  #input-card .em { grid-row:4; }
+  #input-card .calc-btn { grid-row:3; }
+  #input-card .num-box { height:clamp(48px,11svh,100px); }
+  #input-card .op-btn { width:clamp(48px,7.5svh,66px); height:clamp(48px,7.5svh,66px); }
+  #input-card .key { height:clamp(48px,9svh,74px); }
+  #input-card .calc-btn { height:clamp(56px,9svh,70px); }
+}
+@media (orientation:landscape) and (max-height:500px) {
+  body:not(.answer-mode) { padding-top:max(10px,env(safe-area-inset-top)); }
+  body:not(.answer-mode)::before { height:6px; border-bottom-width:2px; }
+  .brand { margin-bottom:12px; }
+  .brand .mode-heading { font-size:22px; padding:5px 12px; }
+  .brand .input-subtitle, .brand .sticker-pencil, .brand .sticker-bow { display:none; }
+  #input-card { padding-block:12px; row-gap:9px; }
+  #input-card .number-field label { margin-bottom:3px; font-size:13px; }
+  #input-card #current-op { padding-top:19px; }
+}

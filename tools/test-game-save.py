@@ -18,7 +18,7 @@ class URLSearchParams{get(k){return testQuery[k]??null;}}
 class ResizeObserver{constructor(fn){} observe(){} disconnect(){}}
 const context=new Proxy({}, {get(){return ()=>{};}});
 const nodes=new Map();let appHTML='';
-function node(id){if(!nodes.has(id)){const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},classList:{add(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
+function node(id){if(!nodes.has(id)){const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){},close(){},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:'';},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
 const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||appHTML.includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of appHTML.matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
@@ -120,20 +120,26 @@ check(JSON.stringify([...values])===before,'calculator modified game saves');
 const fingerHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'*',a:'23',b:'45'};");
 new Function('storage','check',fingerHarness+SOURCE+`\n
  check(fingerNotebook&&phase==='write'&&$('touch-reset'),'finger trial initialization');
+ const paper=$('paper');
+ $('erase-bottom').onclick();check(tool==='erase'&&$('erase').attributes['aria-pressed']==='true','bottom eraser did not update top');
+ $('guide-bottom').onclick();check(guide&&$('guide').attributes['aria-pressed']==='true','bottom hint did not update top');
+ $('guide').onclick();check(!guide&&$('guide-bottom').attributes['aria-pressed']==='false','top hint did not update bottom');
+ $('pen').onclick();check(tool==='pen'&&$('pen-bottom').attributes['aria-pressed']==='true'&&$('paper')===paper,'tool switch recreated canvas or left bottom state stale');
  const down=(id,x,y)=>$('touch-viewport').onpointerdown({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
  const move=(id,x,y)=>$('touch-viewport').onpointermove({pointerId:id,clientX:x,clientY:y,preventDefault(){}});
- const up=id=>$('touch-viewport').onpointerup({pointerId:id,preventDefault(){}});
+ const up=(id,x,y)=>$('touch-viewport').onpointerup({pointerId:id,clientX:x,clientY:y,preventDefault(){}});
  down(1,300,240);move(1,300,270);down(2,400,240);move(2,430,240);up(2);up(1);
  check(strokes.length===0&&history.length===0,'pinch left accidental ink');
- $('touch-reset').onclick();
+ $('touch-reset-bottom').onclick();check(touchViewState.scale===1,'bottom fit did not reset zoom');
  down(3,300,240);move(3,300,275);up(3);check(strokes.length===1,'finger ink not committed');
- $('rule-tool').onclick();down(4,200,360);check(extraLines.length===0,'rule changed before release');down(5,300,360);up(5);up(4);check(extraLines.length===0,'pinch in rule mode added rule');
- down(6,200,360);up(6);check(extraLines[0].row===5&&tool==='pen','finger rule not committed');
+ check(!$('undo').disabled&&!$('undo-bottom').disabled,'undo availability differs between toolbars');
+ $('rule-tool-bottom').onclick();down(4,200,360);check(extraLines.length===0,'rule changed before release');down(5,300,360);up(5);up(4);check(extraLines.length===0,'pinch in rule mode added rule');
+ down(6,200,360);up(6);check(extraLines[0].row===5&&tool==='pen'&&$('rule-tool-bottom').attributes['aria-pressed']==='false','finger rule not committed or selected state was stuck');
  $('erase').onclick();down(7,300,250);down(8,400,250);up(8);up(7);check(strokes.length===1,'pinch erased completed ink');
  down(9,200,360);down(10,300,360);up(10);up(9);check(extraLines.length===1,'pinch erased placed rule');
  touchViewState.scale=2;touchViewState.x=-216;touchViewState.y=-288;touchView.draw();
  down(11,216,432);up(11);check(extraLines.length===0&&strokes.length===1,'zoomed eraser missed rule or removed digit');
- $('undo').onclick();check(extraLines[0].row===5,'zoomed eraser undo failed');
+ $('undo-bottom').onclick();check(extraLines[0].row===5&&touchViewState.scale===2&&$('paper')===paper,'bottom undo lost zoom or failed to restore the rule');
  $('touch-reset').onclick();
  $('pen').onclick();readAll();check(phase==='review' &&recognized.lines[0].row===5,'finger trial reading failed');
  $('back-write').onclick();check($('touch-reset')&&strokes.length===1,'return from review lost trial or ink');
@@ -143,17 +149,26 @@ check(JSON.stringify([...values])===before,'finger calculator trial modified gam
 // Use the normal game URL with no opt-in parameter; exercise saves across reloads.
 const normalHarness=HARNESS.replace("const testQuery={touch:'0'};",'const testQuery={};');
 function runNormal(code){new Function('storage','check',normalHarness+SOURCE+'\n'+code)(storage,check);}
+values.set('hissan-full-notebook-v2',previous);
+runNormal(`
+ const oldInk=JSON.stringify(savedGame.strokes);
+ $('resume').onclick();
+ const original=buildLesson(lesson.op,lesson.a,lesson.b);
+ check(!lesson.rightAligned&&JSON.stringify(E.given(lesson))===JSON.stringify(E.given(original)),'old save equation moved when opened in the new UI');
+ check(JSON.stringify(strokes)===oldInk,'old save ink shifted after resume');
+`);
 runNormal(`
  check(fingerNotebook,'normal game did not enable finger notebook');
  touchViewState.scale=3;touchViewState.x=-50;$('start').onclick();
  check($('touch-viewport')&&!$('zoom-row')&&!$('row-dialog'),'old row dialog is still the normal entry');
  check(touchViewState.scale===1,'new problem inherited old zoom');
+ check(savedGame.rightAligned&&E.given(lesson).main['1:4']==='7','new game did not store right-aligned placement');
  const event=(id,x,y)=>({pointerId:id,button:0,clientX:x,clientY:y,preventDefault(){}});
  $('touch-viewport').onpointerdown(event(21,300,245));$('touch-viewport').onpointermove(event(21,300,280));$('touch-viewport').onpointerup(event(21,300,280));
  toggleWorkRule(5);save();check(savedGame.strokes.length===1&&savedGame.rules[0].row===5,'normal game ink/rule not saved');
 `);
 runNormal(`
- $('resume').onclick();check(fingerNotebook&&strokes.length===1&&extraLines[0].row===5,'normal game did not restore old-format ink and rules');
+ $('resume').onclick();check(fingerNotebook&&strokes.length===1&&extraLines[0].row===5&&lesson.rightAligned,'normal game did not restore right-aligned ink and rules');
  $('erase').onclick();const e={pointerId:22,button:0,clientX:200,clientY:360,preventDefault(){}};
  $('touch-viewport').onpointerdown(e);$('touch-viewport').onpointerup(e);
  check(savedGame.rules.length===0,'normal game eraser not saved');

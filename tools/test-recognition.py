@@ -48,6 +48,24 @@ const ruleRead=E.read(shortRule,8,6);assert(ruleRead.lines.length===1&&ruleRead.
 // Stroke order and direction do not require a particular writing sequence.
 const reordered=E.read(photoInk.slice().reverse().map(s=>s.slice().reverse()),8,6);
 for(const [key,value]of Object.entries(photo.main))assert(reordered.main[key]===value,'stroke direction/order '+key);
+// In an already printed worksheet, a bent 1 near a grid line is still a digit.
+const bentOne=[[[203,246],[210,258],[213,270],[208,287],[203,295]]];
+const edgeDigit=E.read(bentOne,8,6,{digitsOnly:true});
+assert(edgeDigit.main['3:2']==='1'&&edgeDigit.brackets.length===0,'bent 1 at grid edge read as bracket');
+assert(E.read(bentOne,8,6).brackets.length===1,'free-form division bracket regressed');
+const unclear=[
+ [[[153,250],[181,264],[206,269]]],
+ [[[153,270],[166,258],[181,268],[194,254],[208,267],[193,284],[180,270],[167,288],[154,280]]]
+];
+for(const ink of unclear)assert(E.read(ink,8,6,{digitsOnly:true}).main['3:2']==='?','unclear mark guessed as a digit');
+const closedFour=[[[189,242],[166,267],[189,268],[188,242],[189,286]]];
+const crossedSeven=[[[169,244],[171,251],[166,266],[159,286]],[[153,244],[166,243],[193,242]],[[162,260],[183,261]]];
+for(const [expected,strokes] of [['4',closedFour],['7',crossedSeven]]){
+ for(const ink of [strokes,strokes.slice().reverse().map(s=>s.slice().reverse())]){
+  assert(E.read(ink,8,6,{digitsOnly:true}).main['3:2']===expected,'stroke direction or order changed '+expected);
+ }
+}
+assert(DigitReader.recognize([...closedFour,[[70,71]]])[0]?.digit==='4','isolated tap distorted outline');
 const digitsOnly=E.read(photoInk,8,6,{digitsOnly:true});
 for(const [key,value]of Object.entries(photo.main))assert(digitsOnly.main[key]===value,'digits-only worksheet '+key);
 // Changing the exercise or grading model must never change the recognition output.
@@ -65,7 +83,7 @@ for(const [op,pairs]of Object.entries({'+':[[27,15],[46,28],[268,157]],'-':[[52,
  for(const b of e.brackets)ink.push([[b.col*72-12,b.row*72+7],[b.col*72-1,b.row*72+20],[b.col*72+1,b.row*72+36],[b.col*72-2,b.row*72+52],[b.col*72-12,b.row*72+65]]);
  assert(E.grade(model,E.read(ink,rows,E.columns(model)),rows).ok,'complete handwritten worksheet regression '+op+a);
 }
-log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired glyph variations, held-out 5/9 shapes, existing 0–9, grouping, rules and notes.');
+log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired glyph variations, held-out 5/9 shapes, existing 0–9, grouping, unclear glyphs, rules and notes.');
 '''
 script = source + '\nconst fixture=' + json.dumps(fixtures) + ';\n' + tests
 with tempfile.TemporaryDirectory(prefix='hissan-recognition-') as directory:
