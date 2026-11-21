@@ -85,3 +85,8 @@ https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 旧 `index.html?mode=answer/practice&…` のURLは式のパラメーターを維持して `calculator.html` へ移動する。既存のゲーム保存キーと保存内容は変更していない。以前の `home-preview.html` は過去の画面案として残す。
 
 確認：`python3 tools/test-game-save.py` の29項目、`python3 tools/test-calculator.py` の193例・5,294項目。ブラウザでiPhone・iPad幅、3つの入口、解答表示、手書きの入力復元、ゲームの保存からの再開、正式ホームへの復帰、旧URLの引き継ぎを確認。実機でのペンや指は未確認。
+
+
+## 最新：電卓の入力画面をモード別に表示（2026-11-21）
+
+`calculator.html` の見出しはアプリ名から、入口と同じマーク付きの「こたえを みる」「じぶんで とく」へ変更。`body.dataset.calculatorMode` で水色／ピンクの入力画面を切り替える。説明と進むボタンも目的に合わせて表示し、数字ボタンの配色も揃える。解答画面の配色・計算処理は維持する。320px・375px・768px幅と、解答表示・手書きノートから入力へ戻る動作をブラウザで確認。実機は未確認。

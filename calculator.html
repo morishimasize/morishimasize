@@ -461,7 +461,7 @@
       #lesson-count { font-size:15px; }
     }
   </style>
-  <link rel="stylesheet" href="pop-theme.css?v=formal-home1-pop-a1">
+  <link rel="stylesheet" href="pop-theme.css?v=mode-colors1">
 </head>
 <body>
  
@@ -470,8 +470,8 @@
     <span class="theme-sticker sticker-strawberry" aria-hidden="true">🍓</span>
     <span class="theme-sticker sticker-bow" aria-hidden="true">🎀</span>
     <img class="sticker-pencil" src="assets/pencil-sticker.png" alt="" aria-hidden="true" width="110" height="165" decoding="async">
-    <h1>ひっさんノート <span class="pencil-icon" aria-hidden="true">✏️</span></h1>
-    <p class="input-subtitle">すうじを いれてみよう</p>
+    <h1 class="mode-heading"><span id="mode-icon" aria-hidden="true">🧮</span> <span id="mode-name">こたえを みる</span></h1>
+    <p class="input-subtitle">すうじを いれて、ときかたを みよう</p>
     <p class="answer-subtitle">いっしょに けいさんしよう</p>
   </header>
  
@@ -534,7 +534,10 @@
  
   function setMode(mode) {
     calculatorMode = mode === 'practice' ? 'practice' : 'answer';
-    document.querySelector('.input-subtitle').textContent = calculatorMode === 'practice' ? 'じぶんで とく ・ かいて、まるつけ' : 'こたえを みる ・ ときかたも わかるよ';
+    document.body.dataset.calculatorMode = calculatorMode;
+    document.getElementById('mode-name').textContent = calculatorMode === 'practice' ? 'じぶんで とく' : 'こたえを みる';
+    document.getElementById('mode-icon').textContent = calculatorMode === 'practice' ? '✏️' : '🧮';
+    document.querySelector('.input-subtitle').textContent = calculatorMode === 'practice' ? 'もんだいを いれて、ノートに かこう' : 'すうじを いれて、ときかたを みよう';
     document.title = (calculatorMode === 'practice' ? 'じぶんで とく' : 'こたえを みる') + ' | ひっさんノート';
     document.getElementById('calc-start').textContent = calculatorMode === 'practice' ? 'ノートに かく →' : 'ひっさんを みる →';
     document.getElementById('em').textContent = '';
