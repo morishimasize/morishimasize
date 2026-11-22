@@ -160,6 +160,18 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  delete withoutCarry.notes[missingNote];
  result=E.gradeWork(addition,withoutCarry,E.rows(addition));renderLiveGrade();
  check(result.ok&&!$('grade-issues').innerHTML.includes('data-kind="notes"'),'missing carry affected grading');
+ lesson=addition;recognized=withoutCarry;
+ renderWorksheetGrade();
+ check(!$('grade-circle').hidden&&$('grade-issues').innerHTML.includes('class="grade-note" data-cell="'+missingNote+'"'),'correct submission missing red annotation or circle');
+ check(gradeNoteCells()[missingNote]===E.expected(addition).notes[missingNote],'red annotation used wrong value');
+ check(!recognized.notes[missingNote],'annotation changed recognized work');
+ check(miniReadingHTML(recognized).includes('class="grade-note"'),'mini notebook missing red annotation');
+ recognized.notes[missingNote]='1';
+ check(!gradeNotesSVG().includes('data-cell="'+missingNote+'"'),'annotation overlapped a handwritten note');
+ delete recognized.notes[missingNote];result=null;renderWorksheetGrade();
+ check(!$('grade-issues').innerHTML&&$('grade-circle').hidden,'ungraded notebook revealed annotations');
+ result={ok:false,issues:[]};
+ check(!gradeNotesSVG(),'incorrect submission revealed annotations');
  check(unresolvedCells({main:{},notes:{'1:1':'?'}}).length===0,'unclear optional note blocked grading');
  check(unresolvedCells({main:{'3:2':'?'},notes:{}}).length===1,'unclear main digit ignored');
 `)(storage,check);
@@ -229,7 +241,7 @@ runNormal(`
  $('undo').onclick();check(savedGame.rules[0].row===5,'normal game undo not saved');
  extraLines=[];$('open-reading').onclick();
  const expected=E.expected(lesson),fixed=E.given(lesson);
- for(const type of ['main','notes']){
+ for(const type of ['main']){
   const nodes=document.querySelectorAll(type==='main'?'[data-main]':'[data-note]');
   for(const el of nodes){
    const key=el.dataset[type==='main'?'main':'note'];
@@ -242,9 +254,11 @@ runNormal(`
  $('reading-close').onclick();
  const count=progress;$('mark-work').onclick();
  check(result.ok&&credited&&progress===count+1&&phase==='write','normal game reward credit failed');
+ check($('grade-issues').innerHTML.includes('class="grade-note"')&&Object.keys(savedGame.recognized.notes).length===0,'red notes missing or saved as child work');
 `);
 runNormal(`
  $('resume').onclick();const count=progress;check(result.ok&&phase==='write'&&hasReadingCorrections(),'normal live corrections and grade not restored');
+ check($('grade-issues').innerHTML.includes('class="grade-note"'),'red notes not restored after reload');
  $('mark-work').onclick();check(progress===count,'normal game regrade duplicated credit');
  $('open-reading').onclick();$('reading-close').onclick();check($('touch-viewport')&&strokes.length===1,'normal editor return lost handwriting');
 `);

@@ -73,6 +73,17 @@ function svgWorkLines(work){
  const brackets=[...fixed.brackets,...work.brackets].map(b=>`<path d="M${b.col*72-14} ${b.row*72+3} Q${b.col*72+6} ${b.row*72+36} ${b.col*72-14} ${(b.row+1)*72-3}"/>`);
  return [...lines,...brackets].join('');
 }
+// Teaching annotations are separate from the child's ink, recognition and saved work.
+function gradeNoteCells(){
+ if(!result?.ok)return {};
+ return Object.fromEntries(Object.entries(E.expected(lesson).notes).filter(([key])=>!recognized?.notes[key]));
+}
+function gradeNotesSVG(){
+ return Object.entries(gradeNoteCells()).map(([key,value])=>{
+  const [row,col]=key.split(':').map(Number);
+  return `<text class="grade-note" data-cell="${key}" x="${col*72+36}" y="${row*72+22}" text-anchor="middle">${escapeAttr(value)}</text>`;
+ }).join('');
+}
 function miniReadingHTML(work){
  const cols=columnCount(),rows=rowCount(),fixed=E.given(lesson);
  const grid=`<pattern id="mini-square" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0V72" fill="none" stroke="#b5d1df" stroke-width="2"/></pattern>`;
@@ -87,7 +98,7 @@ function miniReadingHTML(work){
   const [r,c]=key.split(':').map(Number);
   return `<text class="${small?'mini-note':'mini-digit'}" x="${c*72+36}" y="${r*72+(small?24:61)}">${escapeAttr(value)}</text>`;
  }).join('');
- return `<svg class="mini-paper" viewBox="0 0 ${cols*72} ${rows*72}" style="--mini-cols:${cols};--mini-rows:${rows}" aria-hidden="true">${grid}${highlights}<rect width="100%" height="100%" fill="url(#mini-square)"/>${numbers({...work.main,...fixed.main},false)}${numbers(work.notes,true)}<g class="mini-lines">${svgWorkLines(work)}</g></svg>`;
+ return `<svg class="mini-paper" viewBox="0 0 ${cols*72} ${rows*72}" style="--mini-cols:${cols};--mini-rows:${rows}" aria-hidden="true">${grid}${highlights}<rect width="100%" height="100%" fill="url(#mini-square)"/>${numbers({...work.main,...fixed.main},false)}${numbers(work.notes,true)}${gradeNotesSVG()}<g class="mini-lines">${svgWorkLines(work)}</g></svg>`;
 }
 function refreshLiveReading(){
  automaticWork();
@@ -119,7 +130,7 @@ function worksheetIssueMark(issue){
 }
 function renderWorksheetGrade(){
  $('grade-circle').hidden=!result?.ok;
- $('grade-issues').innerHTML=result?.issues.map(worksheetIssueMark).join('')||'';
+ $('grade-issues').innerHTML=(result?.issues.map(worksheetIssueMark).join('')||'')+gradeNotesSVG();
 }
 function renderLiveGrade(){
  renderWorksheetGrade();

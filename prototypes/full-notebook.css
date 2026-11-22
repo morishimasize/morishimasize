@@ -334,3 +334,6 @@
 .grade-missing { fill:none; stroke-dasharray:5 4; }
 .grade-rule, .grade-cross { fill:none; stroke:#cb2040; stroke-width:3.5; stroke-linecap:round; }
 .grade-rule { stroke-dasharray:6 5; }
+
+/* Optional carry/borrow notes appear only after a correct submission. */
+.grade-note { fill:#cb2040; stroke:none; font-size:24px; font-weight:700; pointer-events:none; }
