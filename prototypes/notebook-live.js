@@ -56,7 +56,7 @@ function resumeLiveReading(game){
  recognized=correctedWork();
 }
 function unresolvedCells(work){
- return ['main','notes'].flatMap(type=>Object.keys(work[type]).filter(key=>work[type][key].includes('?')).map(key=>({type,key})));
+ return ['main'].flatMap(type=>Object.keys(work[type]).filter(key=>work[type][key].includes('?')).map(key=>({type,key})));
 }
 function renderInkQuestions(){
  const questions=unresolvedCells(recognized);

@@ -159,7 +159,9 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  const missingNote=Object.keys(withoutCarry.notes)[0];
  delete withoutCarry.notes[missingNote];
  result=E.gradeWork(addition,withoutCarry,E.rows(addition));renderLiveGrade();
- check($('grade-issues').innerHTML.includes('class="grade-missing" data-cell="'+missingNote+'" data-kind="notes"'),'missing carry was not marked in the note area');
+ check(result.ok&&!$('grade-issues').innerHTML.includes('data-kind="notes"'),'missing carry affected grading');
+ check(unresolvedCells({main:{},notes:{'1:1':'?'}}).length===0,'unclear optional note blocked grading');
+ check(unresolvedCells({main:{'3:2':'?'},notes:{}}).length===1,'unclear main digit ignored');
 `)(storage,check);
 check(JSON.stringify([...values])===before,'finger calculator trial modified game saves');
 const easyHarness=HARNESS.replace("const testQuery={touch:'0'};","const testQuery={mode:'calculator',op:'+',a:'1',b:'2'};");

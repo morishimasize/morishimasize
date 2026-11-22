@@ -31,7 +31,9 @@ for(const op of ['+','-','*','/'])for(const [a,b]of pairs){
  assert(Object.keys(g.main).every(k=>g.main[k]===e.main[k]),'printed operands differ from grading');
  const bad=JSON.parse(JSON.stringify(work)),key=Object.keys(work.main)[0];bad.main[key]=work.main[key]==='9'?'8':'9';
  assert(!E.gradeWork(m,bad,rows).ok,'incorrect answer accepted');
- if(Object.keys(work.notes).length)assert(!E.gradeWork(m,{...work,notes:{}},rows).ok,'missing carries accepted');
+ assert(E.gradeWork(m,{...work,notes:{}},rows).ok,'optional notes required '+a+op+b);
+ assert(E.gradeWork(m,{...work,notes:{...work.notes,'0:0':'?','1:1':'99'}},rows).ok,'scratch notes affected grading '+a+op+b);
+ assert(E.grade(m,{...e,notes:{}},rows,true).ok,'free worksheet required notes');
  if(work.lines.length)assert(!E.gradeWork(m,{...work,lines:[]},rows).ok,'missing intermediate rules accepted');
  if(op==='/')assert(Object.values(g.main).every(x=>/^\d$/.test(x)),'divisor not split into cells');
  if(rightAligned)assert(Math.max(...Object.keys(g.main).map(k=>Number(k.split(':')[1])))===cols-2,'printed equation has no single right margin '+a+op+b);
