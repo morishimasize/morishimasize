@@ -2,6 +2,7 @@
 'use strict';
 const emptyReadingCorrections=()=>({main:{},notes:{}});
 let readingCorrections=emptyReadingCorrections(),automaticReading=null,inkSources=null;
+const feedbackEdits={main:new Set(),notes:new Set()};
 const strokeSignatures=new WeakMap();
 function inkSignature(stroke){
  if(!strokeSignatures.has(stroke)){
@@ -178,6 +179,7 @@ function saveLiveCell(input,type){
  input.value=value;
  input.classList.toggle('is-unclear',value.includes('?'));
  if(value===(recognized[type][key]||''))return;
+ feedbackEdits[type].add(key);
  const edits={...readingCorrections[type]};
  if(value===(automaticReading[type][key]||''))delete edits[key];
  else edits[key]={value,source:cellSource(type,key)};
@@ -185,6 +187,18 @@ function saveLiveCell(input,type){
  readingCorrections={...readingCorrections,[type]:edits};
  finishLiveEdit();
 }
+function submitReadingFeedback(){
+ for(const type of ['main','notes']){
+  for(const key of feedbackEdits[type]){
+   const correction=readingCorrections[type][key];
+   if(correction&&correction.source===cellSource(type,key)){
+    NotebookFeedback.enqueue(type,automaticReading[type][key]||'',correction.value,inkSources[type][key]);
+   }
+  }
+  feedbackEdits[type].clear();
+ }
+}
+window.addEventListener('pagehide',submitReadingFeedback);
 function finishLiveEdit(){
  result=null;
  recognized=correctedWork();
@@ -225,7 +239,10 @@ function bindLiveReading(){
  $('open-reading').onclick=openLiveEditor;
  $('mark-work').onclick=markLiveWork;
  $('reading-close').onclick=()=>$('reading-dialog').close();
- $('reading-dialog').onclose=()=>$('open-reading').focus({preventScroll:true});
+ $('reading-dialog').onclose=()=>{
+  submitReadingFeedback();
+  $('open-reading')?.focus({preventScroll:true});
+ };
  for(const kind of ['number','note','line'])$('live-edit-'+kind).onclick=()=>{
   reviewTool=kind;renderLiveEditor();
  };

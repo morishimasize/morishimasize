@@ -15,7 +15,7 @@
 // Preserve bookmarks made before the home screen was introduced.
 if (['answer','practice'].includes(new URLSearchParams(location.search).get('mode'))) location.replace('calculator.html'+location.search);
 </script>
-<link rel="stylesheet" href="home.css?v=plain-notebook1">
+<link rel="stylesheet" href="home.css?v=feedback1">
 </head>
 <body>
 <main class="home">
@@ -46,8 +46,28 @@ if (['answer','practice'].includes(new URLSearchParams(location.search).get('mod
     </nav>
     <p class="encouragement">じぶんの ペースで だいじょうぶ。</p>
   </section>
+  <button type="button" id="feedback-settings" aria-haspopup="dialog">おとなの せってい</button>
+  <dialog id="feedback-dialog" aria-labelledby="feedback-title">
+    <h2 id="feedback-title">よみとりの きょうりょく</h2>
+    <p>よみとりを なおしたとき、その 1けたの せんと、なおす まえと あとの すうじを おくります。</p>
+    <p id="feedback-status" role="status"></p>
+    <div id="feedback-enroll">
+      <p><a id="feedback-setup" rel="noreferrer">この たんまつを とうろく</a></p>
+      <form id="feedback-code-form">
+        <label for="feedback-code">とうろく コード</label>
+        <input id="feedback-code" required type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="64">
+        <button type="submit">コードで オンにする</button>
+      </form>
+    </div>
+    <p id="feedback-active" hidden>
+      <button type="button" id="feedback-disable">じどうそうしんを とめる</button>
+      <a id="feedback-manage" rel="noreferrer">かんりする</a>
+    </p>
+    <form method="dialog"><button type="submit">とじる</button></form>
+  </dialog>
 </main>
 <script src="prototypes/notebook-save.js?v=screen-fit1"></script>
-<script src="home.js?v=formal1"></script>
+<script src="prototypes/notebook-feedback.js?v=1"></script>
+<script src="home.js?v=feedback1"></script>
 </body>
 </html>

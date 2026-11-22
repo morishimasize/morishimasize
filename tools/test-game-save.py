@@ -11,7 +11,7 @@ jsc = Path('/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpe
 runtime = shutil.which('node') or (str(jsc) if jsc.exists() else None)
 if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
-source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/notebook-live.js','prototypes/full-notebook.js'])
+source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js','prototypes/notebook-save.js','prototypes/notebook-tools.js','prototypes/notebook-touch.js','prototypes/notebook-feedback.js','prototypes/notebook-live.js','prototypes/full-notebook.js'])
 harness = r'''
 const testQuery={touch:'0'};
 class URLSearchParams{get(k){return testQuery[k]??null;}}
@@ -190,16 +190,20 @@ new Function('storage','check',easyHarness+SOURCE+`
  check($('ink-questions').innerHTML.includes('data-cell="3:2"')&&$('mini-reading').innerHTML.includes('mini-cell-question')&&recognized.main['3:2']==='?'&&result===null,'ambiguous ink not shown on both boards or was graded');
  $('mark-work').onclick();check($('reading-dialog').open&&result===null,'grading guessed an unresolved value');
  const cell=document.querySelectorAll('[data-main]').find(input=>input.dataset.main==='3:2');
+ const reports=[];NotebookFeedback.enqueue=(...args)=>reports.push(args);
  cell.value='3';cell.oninput();
  check(recognized.main['3:2']==='3'&&!$('ink-questions').innerHTML&&strokes.length===1,'correction did not clear both markers or replaced the ink');
  cell.value='4';cell.oninput();
- $('reading-close').onclick();$('mark-work').onclick();
+ check(reports.length===0,'a draft digit was sent while being edited');
+ $('reading-close').onclick();$('reading-dialog').onclose();
+ check(reports.length===1&&reports[0][0]==='main'&&reports[0][1]==='?'&&reports[0][2]==='4'&&reports[0][3].length===1,'closing review did not queue only the final corrected cell');
+ $('mark-work').onclick();
  check(!result.ok&&$('grade-circle').hidden&&$('grade-issues').innerHTML.includes('data-cell="3:2"')&&$('grade-issues').innerHTML.includes('grade-cross'),'incorrect digit was not marked in the main notebook');
  $('open-reading').onclick();
  const answer=document.querySelectorAll('[data-main]').find(input=>input.dataset.main==='3:2');
  answer.value='3';answer.oninput();
  check(!$('grade-issues').innerHTML,'editing left the previous grade visible');
- $('reading-close').onclick();$('mark-work').onclick();
+ $('reading-close').onclick();$('reading-dialog').onclose();$('mark-work').onclick();
  check(phase==='write'&&result.ok&&$('live-grade').innerHTML.includes('ぜんぶ できたね')&&!$('grade-circle').hidden,'successful grade did not put a red circle on the main notebook');
  canvas.onpointerdown(inkEvent(2,98,252));canvas.onpointerup(inkEvent(2,98,272));flushTimers();
  check(recognized.main['3:2']==='3'&&recognized.main['3:1']==='1'&&result===null&&$('grade-circle').hidden,'new ink elsewhere erased the correction or kept the old grade');
