@@ -26,6 +26,18 @@ for(let seed=0;seed<16;seed++){
  assert(Object.keys(read.notes).length===0,'digit cap split into a small note');
  assert(read.lines.length===1&&read.lines[0].row===5,'digit cap mistaken for a rule');
 }
+// Check the confidence gate used for live notebook markings, including similar 5s and 8s.
+const readLive=E.createInkReader();
+const threeCases=[['3',fixture.photoThree],...fixture.heldOutThrees.map(strokes=>['3',strokes]),...Object.entries(fixture.threeLookalikes)];
+for(const [digit,strokes] of threeCases)for(let seed=0;seed<8;seed++){
+ const ink=strokes.map(stroke=>stroke.map(([x,y],i)=>[
+  152+x*(.36+seed*.025)+(y-50)*(seed-3)*.011+Math.sin(i+seed)*.6,
+  230+y*(.43-seed*.013)+Math.cos(i+seed)*.6
+ ]));
+ const written=seed%2?ink.slice().reverse().map(stroke=>stroke.slice().reverse()):ink;
+ const read=readLive(written,8,6);
+ assert(read.main['3:2']===digit,'live notebook '+digit+' variation '+seed+' read as '+read.main['3:2']);
+}
 for(const [digit,shapes]of [['5',fixture.heldOutFives],['9',fixture.heldOutNines]])for(const strokes of shapes)for(let seed=0;seed<8;seed++){
  const ink=strokes.map(s=>s.map(([x,y],i)=>[x*(.75+seed*.08)+12+Math.sin(i+seed)*.5,y*(1.1-seed*.04)+18+Math.cos(i+seed)*.5]));
  assert(DigitReader.recognize(ink)[0]?.digit===digit,'unseen '+digit+' variation '+seed);
@@ -83,7 +95,7 @@ for(const [op,pairs]of Object.entries({'+':[[27,15],[46,28],[268,157]],'-':[[52,
  for(const b of e.brackets)ink.push([[b.col*72-12,b.row*72+7],[b.col*72-1,b.row*72+20],[b.col*72+1,b.row*72+36],[b.col*72-2,b.row*72+52],[b.col*72-12,b.row*72+65]]);
  assert(E.grade(model,E.read(ink,rows,E.columns(model)),rows).ok,'complete handwritten worksheet regression '+op+a);
 }
-log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired glyph variations, held-out 5/9 shapes, existing 0–9, grouping, unclear glyphs, rules and notes.');
+log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired worksheet glyphs, live 3/5/8 variations, held-out 5/9 shapes, existing 0–9, grouping, unclear glyphs, rules and notes.');
 '''
 script = source + '\nconst fixture=' + json.dumps(fixtures) + ';\n' + tests
 with tempfile.TemporaryDirectory(prefix='hissan-recognition-') as directory:
