@@ -3,6 +3,9 @@
 'use strict';
 const CELL=72,COLS=6;
 const key=(r,c)=>`${r}:${c}`;
+// The printed equation reserves the top rows for notes, apart from the quotient.
+function isScratchRow(op,row){return row===0||row===2||(row===1&&op!=='/');}
+function mainEntriesForGrade(op,main){return Object.entries(main).filter(([k])=>!isScratchRow(op,Number(k.split(':')[0])));}
 const bounds=strokes=>{const p=strokes.flat();return {x0:Math.min(...p.map(p=>p[0])),x1:Math.max(...p.map(p=>p[0])),y0:Math.min(...p.map(p=>p[1])),y1:Math.max(...p.map(p=>p[1]))};};
 const symbols={'+':[[[50,12],[50,88]],[[12,50],[88,50]]],'−':[[[12,50],[88,50]]],'×':[[[15,15],[85,85]],[[85,15],[15,85]]]};
 const symbolTemplates=Object.entries(symbols).map(([text,strokes])=>({text,...DigitReader.normalize(strokes)}));
@@ -29,35 +32,36 @@ function createInkReader(){
   scores.set(first,{strokes,digitsOnly,text});
   return text;
  }
- return (strokes,rows,cols,sources)=>read(strokes,rows,cols,{digitsOnly:true,sources},readCached);
+ return (strokes,rows,cols,sources,op)=>read(strokes,rows,cols,{digitsOnly:true,sources,op},readCached);
 }
-function readNote(strokes,readDigit){if(!strokes.length)return '';const ordered=strokes.map(s=>({s,b:bounds([s])})).sort((a,b)=>a.b.x0-b.b.x0);const groups=[];for(const o of ordered){const last=groups[groups.length-1];if(last&&o.b.x0<=last.x1+3){last.strokes.push(o.s);last.x1=Math.max(last.x1,o.b.x1);}else groups.push({strokes:[o.s],x1:o.b.x1});}return groups.map(g=>readDigit(g.strokes,true)).join('');}
-function read(strokes,rows,cols=COLS,{digitsOnly=false,sources}={},readDigit=readGlyph){const main={},notes={},lines=[],brackets=[],groups={};
+function readNote(strokes,readDigit){if(!strokes.length)return '';const ordered=strokes.map(s=>({s,b:bounds([s])})).sort((a,b)=>a.b.x0-b.b.x0);const groups=[];for(const o of ordered){const last=groups[groups.length-1];if(last&&o.b.x0<=last.x1+3){last.strokes.push(o.s);last.x1=Math.max(last.x1,o.b.x1);}else groups.push({strokes:[o.s],x1:o.b.x1});}return groups.length>2?'?':groups.map(g=>readDigit(g.strokes,true)).join('');}
+function read(strokes,rows,cols=COLS,{digitsOnly=false,sources,op}={},readDigit=readGlyph){const main={},notes={},lines=[],brackets=[],groups={};
+ const scratch=row=>op!==undefined&&isScratchRow(op,row);
  const items=strokes.filter(s=>s.length>=2).map(stroke=>{const b=bounds([stroke]),w=b.x1-b.x0,h=b.y1-b.y0;return {stroke,b,w,h,cx:(b.x0+b.x1)/2/CELL,cy:(b.y0+b.y1)/2/CELL};});
  // A short horizontal cap can belong to a large digit (notably a two-stroke 5).
  // Attach it before deciding that it is a rule or a tiny carry/borrow digit.
  // Long rules remain independent, and a real note above a digit is not merged.
  const caps=new Map();
  for(const item of items){
-  if(item.w<CELL*.28||item.w>CELL*1.15||item.h>CELL*.2)continue;
+  if(scratch(Math.floor(item.cy))||item.w<CELL*.28||item.w>CELL*1.15||item.h>CELL*.2)continue;
   const aligned=v=>Math.abs(v-Math.round(v))<.15;
   if(item.w>CELL*.7&&Math.abs(item.cy-Math.round(item.cy))<.18&&aligned(item.b.x0/CELL)&&aligned(item.b.x1/CELL))continue;
   const y=(item.b.y0+item.b.y1)/2;
-  const anchors=items.filter(a=>a!==item&&a.h>CELL*.36&&a.w<CELL*1.15&&Math.floor(a.cx)>=0&&Math.floor(a.cx)<cols&&y>=a.b.y0-CELL*.18&&y<=a.b.y0+CELL*.25&&Math.min(a.b.x1,item.b.x1)>=Math.max(a.b.x0,item.b.x0)-CELL*.08&&y/CELL>=Math.floor(a.cy)-.15&&y/CELL<Math.floor(a.cy)+.55);
+  const anchors=items.filter(a=>a!==item&&!scratch(Math.floor(a.cy))&&a.h>CELL*.36&&a.w<CELL*1.15&&Math.floor(a.cx)>=0&&Math.floor(a.cx)<cols&&y>=a.b.y0-CELL*.18&&y<=a.b.y0+CELL*.25&&Math.min(a.b.x1,item.b.x1)>=Math.max(a.b.x0,item.b.x0)-CELL*.08&&y/CELL>=Math.floor(a.cy)-.15&&y/CELL<Math.floor(a.cy)+.55);
   anchors.sort((a,b)=>Math.abs(y-a.b.y0)-Math.abs(y-b.b.y0));
   if(anchors.length)caps.set(item,anchors[0]);
  }
  for(const item of items){
   const {stroke,b,w,h,cx,cy}=item,anchor=caps.get(item);
-  let r=Math.floor(anchor?.cy??cy),c=Math.floor(anchor?.cx??cx);
-  if(!anchor){
+  const r=Math.floor(anchor?.cy??cy),c=Math.floor(anchor?.cx??cx),scratchInk=scratch(r);
+  if(!anchor&&!scratchInk){
    const gridY=Math.round(cy);
    if(w>CELL*.55&&h<CELL*.16&&(w>CELL*1.25||Math.abs(cy-gridY)<.18)){lines.push({row:gridY,start:b.x0/CELL,end:b.x1/CELL});continue;}
    const first=stroke[0],last=stroke[stroke.length-1],nearBoundary=Math.abs(cx-Math.round(cx))<.22;
    if(!digitsOnly&&h>CELL*.48&&w>CELL*.06&&w<CELL*.36&&Math.abs(last[1]-first[1])>h*.7&&nearBoundary&&first[0]<b.x1-w*.5&&last[0]<b.x1-w*.5){brackets.push({row:Math.floor(cy),col:Math.round(cx)});continue;}
   }
   if(r<0||r>=rows||c<0||c>=cols)continue;
-  const small=!anchor&&h<CELL*.33&&(b.y1/CELL-r)<.37;
+  const small=scratchInk||(!anchor&&h<CELL*.33&&(b.y1/CELL-r)<.37);
   const k=key(r,c),g=groups[k]||(groups[k]={main:[],note:[]});g[small?'note':'main'].push(stroke);
  }
  for(const [k,g]of Object.entries(groups)){
@@ -94,8 +98,9 @@ function given(model){
 }
 function gradeWork(model,work,rows){
  const fixed=given(model);
- // Printed operands win over strokes drawn across them; notes remain editable.
- const full={main:{...work.main,...fixed.main},notes:{...work.notes},lines:[...fixed.lines,...work.lines],brackets:[...fixed.brackets,...work.brackets]};
+ // Older reading corrections can still store digits in the printed equation's note area.
+ const main=Object.fromEntries(mainEntriesForGrade(model.op,work.main));
+ const full={main:{...main,...fixed.main},lines:[...fixed.lines,...work.lines],brackets:[...fixed.brackets,...work.brackets]};
  return grade(model,full,rows,true);
 }
 function translateKey(k,dr,dc){const [r,c]=k.split(':').map(Number);return key(r+dr,c+dc);}
@@ -117,5 +122,5 @@ for(const l of best.lines){const segments=recognized.lines.filter(a=>a.row===l.r
 for(const b of best.brackets){const ok=recognized.brackets.some(x=>x.row===b.row&&x.col===b.col);checks.push({kind:'bracket',...b,ok});if(!ok)issues.push({kind:'bracket',...b,message:'わりざんの かたちを たしかめよう。'});}
 return {ok:issues.length===0,issues,checks,offset:{row:best.dr,col:best.dc}};
 }
-root.NotebookEngine={CELL,COLS,columns,rows,read,createInkReader,readGlyph,expected,given,gradeWork,grade,bounds,key};
+root.NotebookEngine={CELL,COLS,columns,rows,read,createInkReader,readGlyph,expected,given,gradeWork,grade,mainEntriesForGrade,bounds,key};
 })(globalThis);

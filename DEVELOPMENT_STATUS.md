@@ -175,6 +175,8 @@ https://morishimasize.github.io/morishimasize/prototypes/full-notebook.html
 
 `notebook-engine.js` の共通採点から notes を除外。未記入・異なる数・余分なメモも判定に影響しない。`notebook-live.js` は小さな数字の「？」でまるつけを止めない。補助数字の書く場所ヒントも削除。手書きメモと認識・保存の互換性、解答表示の手順は維持。
 
+式の上や印字された数字の段に大きく書いた補助数字も、筆跡の位置でメモとして読み取る。以前の読み取り修正でこれらの段に残った数字も採点対象から外す。わり算で式の上に書く商は採点する。
+
 確認：`python3 tools/test-calculator.py`（579例・17,796項目）、`tools/test-game-save.py`（100項目）、`tools/test-recognition.py`（358項目）、`tools/test-touch.py`（27項目）が通過。補助数字なし・余分な補助数字・補助数字の「？」を許容し、通常の数字の誤りと未確定は引き続き検出。今回のブラウザ表示・iPhone/iPad実機確認は未実施。
 
 

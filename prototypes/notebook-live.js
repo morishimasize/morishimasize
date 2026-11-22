@@ -58,13 +58,13 @@ function resumeLiveReading(game){
  recognized=correctedWork();
 }
 function unresolvedCells(work){
- return ['main'].flatMap(type=>Object.keys(work[type]).filter(key=>work[type][key].includes('?')).map(key=>({type,key})));
+ return E.mainEntriesForGrade(lesson.op,work.main).filter(([,value])=>value.includes('?')).map(([key])=>key);
 }
 function renderInkQuestions(){
  const questions=unresolvedCells(recognized);
- $('ink-questions').innerHTML=questions.map(({type,key})=>{
+ $('ink-questions').innerHTML=questions.map(key=>{
   const [row,col]=key.split(':').map(Number);
-  return `<span class="ink-question ${type}" data-cell="${key}" style="--row:${row};--col:${col}">?</span>`;
+  return `<span class="ink-question main" data-cell="${key}" style="--row:${row};--col:${col}">?</span>`;
  }).join('');
  const message=questions.length?'よみにくい マスに「？」が あるよ。':'';
  if($('ink-feedback').textContent!==message)$('ink-feedback').textContent=message;
@@ -78,7 +78,11 @@ function svgWorkLines(work){
 // Teaching annotations are separate from the child's ink, recognition and saved work.
 function gradeNoteCells(){
  if(!result?.ok)return {};
- return Object.fromEntries(Object.entries(E.expected(lesson).notes).filter(([key])=>!recognized?.notes[key]));
+ return Object.fromEntries(Object.entries(E.expected(lesson).notes).filter(([key])=>{
+  if(recognized?.notes[key])return false;
+  const [row,col]=key.split(':');
+  return row!=='1'||!recognized?.notes[`0:${col}`];
+ }));
 }
 function gradeNotesSVG(){
  return Object.entries(gradeNoteCells()).map(([key,value])=>{
@@ -102,7 +106,7 @@ function miniReadingHTML(work,issues=liveGradeIssues()){
  const cols=columnCount(),rows=rowCount(),fixed=E.given(lesson);
  const grid=`<pattern id="mini-square" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0V72" fill="none" stroke="#b5d1df" stroke-width="2"/></pattern>`;
  const issueCells=new Set(issues.filter(issue=>issue.key).map(issue=>issue.key));
- const questionCells=new Set(unresolvedCells(work).map(item=>item.key));
+ const questionCells=new Set(unresolvedCells(work));
  const rect=(key,fill)=>{
   const [r,c]=key.split(':').map(Number);
   return `<rect class="mini-cell-${fill}" x="${c*72}" y="${r*72}" width="72" height="72"/>`;
@@ -168,7 +172,7 @@ function markLiveWork(){
   $('read-status').textContent='「？」の すうじを たしかめよう。';
   openLiveEditor();return;
  }
- if(!Object.keys(recognized.main).length&&!Object.keys(recognized.notes).length){
+ if(!E.mainEntriesForGrade(lesson.op,recognized.main).length){
   $('read-status').textContent='とちゅうの けいさんや こたえを かいてね。';return;
  }
  $('read-status').textContent='';
@@ -252,8 +256,7 @@ function openLiveEditor(){
  if(drawing)return;
  clearTimeout(inkFeedbackTimer);
  refreshLiveReading();
- const questions=unresolvedCells(recognized);
- reviewTool=questions.some(item=>item.type==='notes')&&!questions.some(item=>item.type==='main')?'note':'number';
+ reviewTool='number';
  renderLiveEditor();
  $('reading-dialog').showModal();
 }

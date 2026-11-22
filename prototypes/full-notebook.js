@@ -19,13 +19,13 @@ function resumeGame(){
  Object.assign(touchViewState,{scale:1,x:0,y:0});
  const game=savedGame;config={...game.config};const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=game.rightAligned===true;lesson.compactPaper=game.compactPaper===true;
  strokes=game.strokes;extraLines=game.rules||[];editRow=Math.min(rowCount()-1,Math.max(0,game.editRow??(lesson.op==='/'?1:3)));recognized=game.recognized;credited=game.credited;guide=!!game.guide;tool=game.tool==='erase'?'erase':'pen';reviewTool=['number','note','line','bracket'].includes(game.reviewTool)?game.reviewTool:'number';history=[];
+ if(fingerNotebook)resumeLiveReading(game);
+ result=null;
+ if(game.graded&&recognized)gradeRecognizedWork();
  if(fingerNotebook){
-  resumeLiveReading(game);
-  result=game.graded?E.gradeWork(lesson,recognized,rowCount()):null;
   liveIssueTargets=result?result.issues.map(liveIssueId):game.issueTargets||[];
   phase=game.phase==='reward'&&credited&&result?.ok?'reward':'write';
  }else{
-  result=game.graded&&recognized?E.gradeWork(lesson,recognized,rowCount()):null;
   phase=game.phase==='reward'&&(!credited||!result?.ok)?'review':game.phase;
  }
  refresh();
@@ -68,7 +68,7 @@ function syncWritingTools(){
 const readInk=E.createInkReader();
 let inkFeedbackTimer;
 function readNotebookInk(sources){
- const work=readInk(strokes,rowCount(),columnCount(),sources);
+ const work=readInk(strokes,rowCount(),columnCount(),sources,lesson.op);
  for(const key of Object.keys(E.given(lesson).main))delete work.main[key];
  return work;
 }

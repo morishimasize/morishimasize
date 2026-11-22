@@ -67,6 +67,20 @@ for(const [digit,strokes]of Object.entries(DigitReader.shapes))for(let seed=0;se
 assert(DigitReader.recognize([]).length===0,'blank recognized');
 assert(DigitReader.recognize([[[1,1],[2,2]]]).length===0,'tiny tap recognized');
 const place=(shape,row,col,scaleX=.4,scaleY=.6,top=.32)=>shape.map(s=>s.map(([x,y])=>[(col+.2)*72+x*scaleX,(row+top)*72+y*scaleY]));
+// Approximate the two carries above the printed 268 + 157, including one across a row boundary.
+const addition=Object.assign(buildLesson('+',268,157),{rightAligned:true,compactPaper:true});
+const additionsNotes=[[[187,24],[187,40],[187,56],[187,68]],[[259,52],[255,52],[253,67],[250,80],[243,93]]];
+const answerInk=['4','2','5'].flatMap((digit,i)=>place(DigitReader.shapes[digit],3,2+i,.3456,.4248,.33));
+const readAddition=ink=>readLive(ink,E.rows(addition),E.columns(addition),undefined,addition.op);
+const photographedAddition=readAddition([...additionsNotes,...answerInk]);
+assert(photographedAddition.notes['0:2']==='1'&&photographedAddition.notes['1:3']==='1','large carries above printed digits became answer digits');
+assert(E.gradeWork(addition,photographedAddition,E.rows(addition)).ok,'photo-style carries rejected an otherwise correct sum');
+const multipleNotes=[12,32,52].map(x=>[[2*72+x,20],[2*72+x,60]]);
+const unclearAddition=readAddition([...multipleNotes,...answerInk]);
+assert(unclearAddition.notes['0:2']==='?'&&E.gradeWork(addition,unclearAddition,E.rows(addition)).ok,'several marks in a scratch cell did not become an optional unknown');
+const division=Object.assign(buildLesson('/',72,3),{rightAligned:true,compactPaper:true});
+const quotient=readLive(place(DigitReader.shapes['2'],1,3,.3456,.4248,.33),E.rows(division),E.columns(division),undefined,division.op);
+assert(quotient.main['1:3']==='2','quotient was treated as a scratch note');
 // True carry/borrow numbers remain independent of the large digit below them.
 for(const note of ['1','9']){
  const ink=[...place(DigitReader.shapes[note],2,3,.14,.15,0),...place(DigitReader.shapes['5'],2,3)];

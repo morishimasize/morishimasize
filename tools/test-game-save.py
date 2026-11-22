@@ -320,6 +320,28 @@ runNormal(`
  const count=progress;$('mark-work').onclick();
  check(result.ok&&!$('grade-circle').hidden&&progress===count+1,'explicit grading after corrections did not award credit');
 `);
+runNormal(`
+ config={op:'+',example:2};$('start').onclick();
+ const count=progress;
+ strokes=[[[187,24],[187,40],[187,56],[187,68]],[[259,52],[255,52],[253,67],[250,80],[243,93]]];
+ refreshLiveReading();$('mark-work').onclick();
+ check(result===null&&!$('ink-questions').innerHTML,'notes alone caused an error or submitted the answer');
+ // Older saved review edits can still have an unclear digit in the scratch area.
+ readingCorrections.main['0:5']={value:'?',source:''};
+ const answers=['4','2','5'].flatMap((digit,i)=>DigitReader.shapes[digit].map(stroke=>stroke.map(([x,y])=>[(2.2+i)*72+x*.3456,3.33*72+y*.4248])));
+ strokes.push(...answers);
+ $('mark-work').onclick();
+ check(result?.ok&&progress===count+1&&!$('grade-circle').hidden,'carry above the formula prevented marking a correct answer');
+ check(!$('grade-issues').innerHTML.includes('data-cell="1:2"'),'red teaching note duplicated the carry in the row above');
+ const old=NotebookSave.read(storage);
+ old.progress=count;old.session.credited=false;old.session.issueTargets=['main:0:2'];
+ NotebookSave.write(storage,old.progress,old.session);
+`);
+runNormal(`
+ const count=progress;$('resume').onclick();
+ check(result?.ok&&credited&&progress===count+1&&!$('grade-circle').hidden,'a previously marked game rejected or missed credit after the fix');
+ $('mark-work').onclick();check(progress===count+1,'the migrated game earned duplicate credit');
+`);
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''
 script = 'const SOURCE='+json.dumps(source)+';\nconst HARNESS='+json.dumps(harness)+';\n'+tests
