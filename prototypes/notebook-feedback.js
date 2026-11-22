@@ -1,11 +1,14 @@
-/* Uploads only confirmed reading corrections from a registered browser. */
+/* Uploads only confirmed reading corrections. */
 (function(root){
 'use strict';
 const site='https://hissan-note-feedback.artfulcookie1.chatgpt.site';
 const tokenKey='hissan-feedback-device-v1';
+const clientKey='hissan-feedback-client-v2';
+const preferenceKey='hissan-feedback-preference-v2';
 const pendingPrefix='hissan-feedback-pending-v1:';
 const modelKey='hissan-recognition-tuning-v1';
 const tokenPattern=/^[a-f0-9]{64}$/;
+const clientPattern=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 let active=null,retryTimer,delay=1000;
 
 function get(key){try{return localStorage.getItem(key);}catch{return null;}}
@@ -21,68 +24,68 @@ function pending(){
  }catch{}
  return keys;
 }
-function device(){const value=get(tokenKey);return tokenPattern.test(value||'')?value:null;}
-function request(token,method,body,signal){
+function enabled(){return get(preferenceKey)!=='off';}
+function anonymousSender(){
+ const id=crypto.randomUUID();
+ return put(clientKey,id)?id:null;
+}
+function sender(){
+ if(!enabled())return null;
+ const client=get(clientKey);
+ if(clientPattern.test(client||''))return client;
+ const legacy=get(tokenKey);
+ return tokenPattern.test(legacy||'')?legacy:null;
+}
+function request(client,method,body,signal){
+ const identity=tokenPattern.test(client)?{Authorization:'Bearer '+client}:{'X-Feedback-Client':client};
  return fetch(site+'/api/feedback',{
   method,body,signal,keepalive:true,credentials:'omit',referrerPolicy:'no-referrer',
-  headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})}
+  headers:{...identity,...(body?{'Content-Type':'application/json'}:{})}
  });
 }
-function clearDevice(){
+function enable(){return put(preferenceKey,'on');}
+function disable(){
+ if(!put(preferenceKey,'off'))return false;
+ const token=get(tokenKey);
  remove(tokenKey);
  for(const key of pending())remove(key);
  active?.abort();
  clearTimeout(retryTimer);
  delay=1000;
-}
-async function enable(value){
- const token=value.trim();
- if(!tokenPattern.test(token))return false;
- try{
-  const response=await request(token,'HEAD');
-  if(!response.ok)return false;
-  const old=device();
-  if(old===token)return true;
-  if(!put(tokenKey,token))return false;
-  if(old){
-   for(const key of pending())remove(key);
-   active?.abort();
-   request(old,'DELETE').catch(()=>{});
-  }
-  clearTimeout(retryTimer);
-  delay=1000;
-  return true;
- }catch{return false;}
-}
-function disable(){
- const token=device();
- clearDevice();
- if(token)request(token,'DELETE').catch(()=>{});
+ if(tokenPattern.test(token||''))request(token,'DELETE').catch(()=>{});
+ return true;
 }
 async function flush(){
- if(active)return;
- const token=device();
- if(!token||!pending().length)return;
+ if(active||!enabled()||!pending().length)return;
+ const client=sender()||anonymousSender();
+ if(!client)return;
  clearTimeout(retryTimer);
  active=new AbortController();
  try{
-  while(device()===token){
+  while(sender()===client){
    const key=pending()[0];
    if(!key)break;
    const body=get(key);
    if(!body)break;
-   const response=await request(token,'POST',body,active.signal);
-   if(response.status===401){if(device()===token)clearDevice();break;}
+   const response=await request(client,'POST',body,active.signal);
+   if(response.status===401&&tokenPattern.test(client)&&sender()===client&&anonymousSender()){
+    remove(tokenKey);
+    break;
+   }
    if(!response.ok&&response.status!==400)throw Error('Unable to submit handwriting correction');
-   if(device()===token&&get(key)===body)remove(key);
+   if(sender()===client&&get(key)===body)remove(key);
    delay=1000;
   }
  }catch{
-  if(device()===token){
+  if(sender()===client){
    retryTimer=setTimeout(flush,delay);
    delay=Math.min(delay*2,60000);
   }
- }finally{active=null;}
+ }finally{
+  active=null;
+  const current=sender();
+  if(current&&current!==client)void flush();
+ }
 }
 function normalizedInk(strokes){
  const lines=(strokes||[]).filter(stroke=>stroke.length>1);
@@ -102,12 +105,12 @@ function normalizedInk(strokes){
  ]));
 }
 function enqueue(kind,before,after,strokes){
- if(!device()||before===after||!/^\d$/.test(after)||!(/^[0-9?]$/.test(before)))return;
+ if(!enabled()||before===after||!/^\d$/.test(after)||!/^[0-9?]$/.test(before))return;
  const source=document.querySelector('script[src^="digit-reader.js?v="]')?.getAttribute('src');
  const reader=source?.match(/[?&]v=(ink\d{1,5})(?:&|$)/)?.[1];
  if(!reader||!['main','notes'].includes(kind)||pending().length>=200)return;
  const ink=normalizedInk(strokes);
- if(!ink)return;
+ if(!ink||!(sender()||anonymousSender()))return;
  const id=crypto.randomUUID();
  if(put(pendingPrefix+id,JSON.stringify({id,before,after,reader,kind,strokes:ink})))void flush();
 }
@@ -129,8 +132,8 @@ function loadRecognitionRules(){
 window.addEventListener('online',flush);
 window.addEventListener('pageshow',flush);
 window.addEventListener('storage',event=>{
- if(event.key===tokenKey||event.key===null)active?.abort();
+ if(event.key===preferenceKey||event.key===tokenKey||event.key===clientKey||event.key===null)active?.abort();
 });
-root.NotebookFeedback={site,enabled:()=>Boolean(device()),enable,disable,enqueue,pending:()=>pending().length,flush};
+root.NotebookFeedback={site,enabled,enable,disable,enqueue,pending:()=>pending().length,flush};
 loadRecognitionRules();
 })(globalThis);

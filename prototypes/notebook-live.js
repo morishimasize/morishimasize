@@ -168,6 +168,7 @@ function liveEditorHTML(){
    <button id="live-edit-number">すうじ</button><button id="live-edit-note">ちいさい すうじ</button><button id="live-edit-line">せん</button>
   </div>
   <p class="sub" id="live-edit-help"></p>
+  <p class="sub" id="live-feedback-notice" hidden>なおした すうじの せんは、よみとりを よくするために おくります。</p>
   <div id="live-edit-grid" class="live-edit-grid"></div>
   <button id="live-remove-line" hidden>せんを ひとつ けす</button>
  </dialog>`;
@@ -214,6 +215,7 @@ function saveLiveLines(lines){
 function renderLiveEditor(){
  for(const kind of ['number','note','line'])$('live-edit-'+kind).setAttribute('aria-pressed',String(reviewTool===kind));
  $('live-edit-help').textContent=reviewTool==='line'?'せんを いれたい マスの さかいめに ひいてね。':'「？」や ちがう すうじの マスを おしてね。';
+ $('live-feedback-notice').hidden=reviewTool==='line'||!NotebookFeedback.enabled();
  $('live-edit-grid').innerHTML=reviewGrid();
  $('live-remove-line').hidden=reviewTool!=='line';
  $('live-remove-line').disabled=!recognized.lines.length;

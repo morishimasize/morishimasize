@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the feedback queue, consent, payload minimization, and retry behavior."""
+"""Check code-free feedback, settings, payload minimization, and retries."""
 from pathlib import Path
 import json
 import shutil
@@ -23,13 +23,14 @@ const localStorage = {
  removeItem: key => values.delete(key)
 };
 let counter=0;
-const crypto={randomUUID:()=>String(++counter)};
+const crypto={randomUUID:()=> '00000000-0000-4000-8000-'+String(++counter).padStart(12,'0')};
 class AbortController{constructor(){this.signal={};}abort(){this.signal.aborted=true;}}
 const requests=[];
-let offline=false;
+let offline=false,rejectLegacy=false;
 async function fetch(url,request){
  requests.push({url,request});
  if(offline)throw Error('offline');
+ if(rejectLegacy&&request.headers.Authorization)return {ok:false,status:401};
  return {ok:true,status:204};
 }
 let retry;
@@ -41,34 +42,52 @@ async function test(){
  const app=NotebookFeedback;
  const check=(value,message)=>{if(!value)throw Error(message);};
  const ink=[[[155,240],[180,260],[190,280]],[[180,280],[148,297]]];
- app.enqueue('main','?','3',ink);
- await tick();
- check(!requests.length&&!app.enabled(),'an unregistered device sent or enabled feedback');
- check(!(await app.enable('incorrect'))&&!requests.length,'invalid activation sent a request');
- check(await app.enable('a'.repeat(64))&&app.enabled(),'registration did not enable automatic sending');
+ await events.pageshow();
+ check(app.enabled()&&!requests.length&&!values.size,'feedback required registration or sent before any correction');
  app.enqueue('main','3','3',ink);
  app.enqueue('main','?','',ink);
  app.enqueue('main','?','3',[]);
- check(requests.length===1,'an unchanged, empty, or unlabelled glyph was sent');
+ check(requests.length===0,'an unchanged, empty, or unlabelled glyph was sent');
  offline=true;
  app.enqueue('main','?','3',ink);
  await tick();
  check(app.pending()===1&&retry,'a failed upload was not retained');
- const first=JSON.parse(requests[1].request.body);
+ const firstRequest=requests[0].request;
+ check(firstRequest.method==='POST'&&firstRequest.headers['X-Feedback-Client']&&
+       !firstRequest.headers.Authorization&&firstRequest.credentials==='omit','default send required a registration or account');
+ const first=JSON.parse(firstRequest.body);
  check(first.before==='?'&&first.after==='3'&&first.reader==='ink6'&&first.kind==='main','missing feedback fields');
  check(Object.keys(first).sort().join(',')==='after,before,id,kind,reader,strokes','payload includes unrelated data');
  check(JSON.stringify(first.strokes)==='[[[123,0],[561,351],[737,702]],[[561,702],[0,1000]]]','ink coordinates were not normalized');
  offline=false;
  await events.online();
- check(app.pending()===0&&JSON.parse(requests[2].request.body).id===first.id,'retry invented a duplicate or did not clear the queue');
+ check(app.pending()===0&&JSON.parse(requests[1].request.body).id===first.id&&
+       requests[1].request.headers['X-Feedback-Client']===firstRequest.headers['X-Feedback-Client'],'retry changed the sample or sender');
  offline=true;
  app.enqueue('notes','8','3',ink);
  await tick();
  app.disable();
  check(!app.enabled()&&app.pending()===0&&!retry,'disabling did not erase queued reports');
- check(requests.at(-1).request.method==='DELETE','disabling did not ask to revoke the device token');
+ const stoppedAt=requests.length;
  await events.pageshow();
- check(requests.at(-1).request.method==='DELETE','disabled device retried an old report');
+ app.enqueue('main','?','3',ink);
+ check(requests.length===stoppedAt,'disabled device sent a new or old report');
+ offline=false;
+ check(app.enable()&&app.enabled()&&requests.length===stoppedAt,'turning feedback on required a network call');
+ app.enqueue('main','?','3',ink);
+ await tick();
+ check(requests.length===stoppedAt+1&&app.pending()===0,'feedback did not resume');
+
+ values.clear();
+ localStorage.setItem('hissan-feedback-device-v1','a'.repeat(64));
+ rejectLegacy=true;
+ app.enqueue('main','?','3',ink);
+ await tick();
+ await tick();
+ const legacy=requests.at(-2).request;
+ const recovered=requests.at(-1).request;
+ check(legacy.headers.Authorization&&recovered.headers['X-Feedback-Client']&&legacy.body===recovered.body&&app.pending()===0,
+       'old registration failure lost a pending sample');
 
  const key='hissan-recognition-tuning-v1';
  const v1={schema:1,baseline:'ink6',revision:1,rules:{'93uwl':'9'}};
@@ -79,7 +98,9 @@ async function test(){
   return {ok:true,json:async()=>v2};
  };
  const openNotebook=new Function('localStorage','window','fetch',tuningSource+'\n'+feedbackSource);
+ NotebookFeedback.disable();
  openNotebook(localStorage,window,getModel);
+ check(!NotebookFeedback.enabled(),'opt-out did not survive reopening the notebook');
  const input={ratio:.82,length:2.5};
  const choices=[{digit:'9',distance:.08},{digit:'3',distance:.087}];
  check(RecognitionTuning.read(input,choices)==='9','cached rule was not used at startup');
@@ -90,7 +111,7 @@ async function test(){
  check(RecognitionTuning.read(input,choices)==='?','next notebook kept a withdrawn rule');
  check(!RecognitionTuning.validate({...v1,baseline:'ink5'})&&
        !RecognitionTuning.validate({...v1,rules:{'93uwl':'6'}}),'incompatible model was accepted');
- (typeof print==='function'?print:console.log)('PASS: feedback queue, automatic upload, retry, opt-out, and versioned model download');
+ (typeof print==='function'?print:console.log)('PASS: default code-free upload, retries, legacy migration, persistent opt-out, and model download');
 }
 '''
 
