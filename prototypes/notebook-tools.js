@@ -1,9 +1,13 @@
 /* Magnify one selected grid row and place rules without recognizing handwriting. */
 'use strict';
 let rowEditorOpen=false,editRow=3,extraLines=[];
-function rememberWork(){history.push({strokes:strokes.slice(),rules:extraLines.slice(),corrections:readingCorrections});}
+function rememberWork(issueTargets){history.push({strokes:strokes.slice(),rules:extraLines.slice(),corrections:readingCorrections,issueTargets});}
 function undoWork(){
- if(history.length){const previous=history.pop();strokes=previous.strokes;extraLines=previous.rules;readingCorrections=previous.corrections;}
+ if(history.length){
+  const previous=history.pop();
+  strokes=previous.strokes;extraLines=previous.rules;readingCorrections=previous.corrections;
+  if(previous.issueTargets)liveIssueTargets=previous.issueTargets;
+ }
  if(fingerNotebook&&phase==='write')updateWritingPaper(true);
  else refresh(false);
 }

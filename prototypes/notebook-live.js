@@ -2,6 +2,7 @@
 'use strict';
 const emptyReadingCorrections=()=>({main:{},notes:{}});
 let readingCorrections=emptyReadingCorrections(),automaticReading=null,inkSources=null;
+let liveIssueTargets=[];
 const feedbackEdits={main:new Set(),notes:new Set()};
 const strokeSignatures=new WeakMap();
 function inkSignature(stroke){
@@ -85,10 +86,22 @@ function gradeNotesSVG(){
   return `<text class="grade-note" data-cell="${key}" x="${col*72+36}" y="${row*72+22}" text-anchor="middle">${escapeAttr(value)}</text>`;
  }).join('');
 }
-function miniReadingHTML(work){
+function liveIssueId(issue){
+ if(issue.key)return `${issue.kind}:${issue.key}`;
+ if(issue.kind==='line')return `line:${issue.row}:${issue.start}:${issue.end}`;
+ if(issue.kind==='bracket')return `bracket:${issue.row}:${issue.col}`;
+ return issue.kind;
+}
+function liveGradeIssues(){
+ if(result)return result.issues;
+ if(!liveIssueTargets.length)return [];
+ const targets=new Set(liveIssueTargets);
+ return E.gradeWork(lesson,recognized,rowCount()).issues.filter(issue=>targets.has(liveIssueId(issue)));
+}
+function miniReadingHTML(work,issues=liveGradeIssues()){
  const cols=columnCount(),rows=rowCount(),fixed=E.given(lesson);
  const grid=`<pattern id="mini-square" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0V72" fill="none" stroke="#b5d1df" stroke-width="2"/></pattern>`;
- const issueCells=new Set(result?.issues.filter(issue=>issue.key).map(issue=>issue.key));
+ const issueCells=new Set(issues.filter(issue=>issue.key).map(issue=>issue.key));
  const questionCells=new Set(unresolvedCells(work).map(item=>item.key));
  const rect=(key,fill)=>{
   const [r,c]=key.split(':').map(Number);
@@ -104,11 +117,14 @@ function miniReadingHTML(work){
 function refreshLiveReading(){
  automaticWork();
  recognized=correctedWork();
- renderMiniReading();
+ renderLiveFeedback();
 }
-function renderMiniReading(){
+function renderLiveFeedback(){
+ const issues=liveGradeIssues();
+ renderLiveGrade(issues);
  renderInkQuestions();
- $('mini-reading').innerHTML=miniReadingHTML(recognized);
+ $('mini-reading').innerHTML=miniReadingHTML(recognized,issues);
+ return issues;
 }
 function worksheetIssueMark(issue){
  const cell=E.CELL;
@@ -129,16 +145,15 @@ function worksheetIssueMark(issue){
  }
  return '';
 }
-function renderWorksheetGrade(){
+function renderLiveGrade(issues=liveGradeIssues()){
  $('grade-circle').hidden=!result?.ok;
- $('grade-issues').innerHTML=(result?.issues.map(worksheetIssueMark).join('')||'')+gradeNotesSVG();
-}
-function renderLiveGrade(){
- renderWorksheetGrade();
+ $('grade-issues').innerHTML=issues.map(worksheetIssueMark).join('')+gradeNotesSVG();
  const target=$('live-grade');
  target.classList.toggle('live-correct',Boolean(result?.ok));
- target.innerHTML=result?.ok?`<strong>ぜんぶ できたね！</strong><button id="live-next">${calculatorMode?'べつの けいさんへ':'ごほうびの えへ'} →</button>`:
-  result?'<strong>もういちど たしかめよう</strong><span>ノートの あかい ところを みてね。</span>':'';
+ const message=result?.ok?`<strong>ぜんぶ できたね！</strong><button id="live-next">${calculatorMode?'べつの けいさんへ':'ごほうびの えへ'} →</button>`:
+  issues.length?'<strong>もういちど たしかめよう</strong><span>ノートの あかい ところを みてね。</span>':
+  liveIssueTargets.length?'<strong>もういちど まるつけ してね。</strong>':'';
+ if(target.innerHTML!==message)target.innerHTML=message;
  const next=$('live-next');
  if(next)next.onclick=()=>{
   if(calculatorMode){returnToCalculator();return;}
@@ -158,8 +173,9 @@ function markLiveWork(){
  }
  $('read-status').textContent='';
  gradeRecognizedWork();
+ liveIssueTargets=result.issues.map(liveIssueId);
  if(!result.ok&&touchViewState.scale>1)touchView.reset();
- renderLiveGrade();renderMiniReading();save();
+ renderLiveFeedback();save();
 }
 function liveEditorHTML(){
  return `<dialog id="reading-dialog" class="row-dialog live-reading-dialog" aria-labelledby="reading-title">
@@ -186,7 +202,8 @@ function saveLiveCell(input,type){
  else edits[key]={value,source:cellSource(type,key)};
  rememberWork();
  readingCorrections={...readingCorrections,[type]:edits};
- finishLiveEdit();
+ const issues=finishLiveEdit();
+ input.parentElement.classList.toggle('is-issue',issues.some(issue=>issue.key===key));
 }
 function submitReadingFeedback(){
  for(const type of ['main','notes']){
@@ -204,7 +221,10 @@ function finishLiveEdit(){
  result=null;
  recognized=correctedWork();
  $('read-status').textContent='';
- syncWritingTools();renderLiveGrade();renderMiniReading();save();
+ syncWritingTools();
+ const issues=renderLiveFeedback();
+ save();
+ return issues;
 }
 function saveLiveLines(lines){
  rememberWork();
@@ -216,7 +236,7 @@ function renderLiveEditor(){
  for(const kind of ['number','note','line'])$('live-edit-'+kind).setAttribute('aria-pressed',String(reviewTool===kind));
  $('live-edit-help').textContent=reviewTool==='line'?'せんを いれたい マスの さかいめに ひいてね。':'「？」や ちがう すうじの マスを おしてね。';
  $('live-feedback-notice').hidden=reviewTool==='line'||!NotebookFeedback.enabled();
- $('live-edit-grid').innerHTML=reviewGrid();
+ $('live-edit-grid').innerHTML=reviewGrid(liveGradeIssues());
  $('live-remove-line').hidden=reviewTool!=='line';
  $('live-remove-line').disabled=!recognized.lines.length;
  for(const type of ['main','notes'])document.querySelectorAll(type==='main'?'[data-main]':'[data-note]').forEach(input=>{

@@ -24,7 +24,7 @@ function clearTimeout(id){timers.delete(id);}
 function flushTimers(){const pending=[...timers.values()];timers.clear();for(const fn of pending)fn();}
 function node(id){if(!nodes.has(id)){let nestedHTML='';const v={id,clientWidth:432,clientHeight:576,value:'',textContent:'',disabled:false,hidden:false,style:{},dataset:{},attributes:{},classList:{add(){},toggle(){}},setAttribute(name,value){this.attributes[name]=value;},focus(){},select(){},scrollIntoView(){},insertAdjacentHTML(){},showModal(){this.open=true;},close(){this.open=false;},getContext(){return context;},width:432,height:id==='row-paper'?72:576,getBoundingClientRect(){return {left:0,top:0,width:id==='row-paper'?672:432,height:id==='row-paper'?112:576};},setPointerCapture(){},hasPointerCapture(){return false;},releasePointerCapture(){}};Object.defineProperty(v,'innerHTML',{get(){return id==='app'?appHTML:nestedHTML;},set(html){if(id==='app'){appHTML=html;nodes.clear();nodes.set('app',v);}else nestedHTML=html;}});if(id==='row-paper')v.dataset.row=appHTML.match(/id="row-paper" data-row="(\d+)"/)?.[1]||'0';nodes.set(id,v);}return nodes.get(id);}
 const markup=()=>appHTML+(nodes.get('live-edit-grid')?.innerHTML||'');
-const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||markup().includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of markup().matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';found.push(el);}}return found;}};
+const document={visibilityState:'visible',addEventListener(){},body:node('body'),getElementById(id){if(['app','notice'].includes(id)||markup().includes('id="'+id+'"'))return node(id);return null;},querySelector(selector){return node(selector);},querySelectorAll(selector){const type=selector==='[data-main]'?'main':selector==='[data-note]'?'note':null;if(!type)return [];const found=[];for(const match of markup().matchAll(/<input\b[^>]*>/g)){const key=match[0].match(new RegExp('data-'+type+'="([^"]+)"'));if(key){const el=node(type+':'+key[1]);el.dataset[type]=key[1];el.value=match[0].match(/value="([^"]*)"/)?.[1]||'';el.parentElement=node('cell:'+key[1]);found.push(el);}}return found;}};
 const window={location:{search:'',href:''},scrollTo(){},addEventListener(){}};
 const localStorage=storage;
 '''
@@ -161,14 +161,14 @@ new Function('storage','check',fingerHarness+SOURCE+`\n
  result=E.gradeWork(addition,withoutCarry,E.rows(addition));renderLiveGrade();
  check(result.ok&&!$('grade-issues').innerHTML.includes('data-kind="notes"'),'missing carry affected grading');
  lesson=addition;recognized=withoutCarry;
- renderWorksheetGrade();
+ renderLiveGrade();
  check(!$('grade-circle').hidden&&$('grade-issues').innerHTML.includes('class="grade-note" data-cell="'+missingNote+'"'),'correct submission missing red annotation or circle');
  check(gradeNoteCells()[missingNote]===E.expected(addition).notes[missingNote],'red annotation used wrong value');
  check(!recognized.notes[missingNote],'annotation changed recognized work');
  check(miniReadingHTML(recognized).includes('class="grade-note"'),'mini notebook missing red annotation');
  recognized.notes[missingNote]='1';
  check(!gradeNotesSVG().includes('data-cell="'+missingNote+'"'),'annotation overlapped a handwritten note');
- delete recognized.notes[missingNote];result=null;renderWorksheetGrade();
+ delete recognized.notes[missingNote];result=null;renderLiveGrade();
  check(!$('grade-issues').innerHTML&&$('grade-circle').hidden,'ungraded notebook revealed annotations');
  result={ok:false,issues:[]};
  check(!gradeNotesSVG(),'incorrect submission revealed annotations');
@@ -265,6 +265,60 @@ runNormal(`
  check($('grade-issues').innerHTML.includes('class="grade-note"'),'red notes not restored after reload');
  $('mark-work').onclick();check(progress===count,'normal game regrade duplicated credit');
  $('open-reading').onclick();$('reading-close').onclick();check($('touch-viewport')&&strokes.length===1,'normal editor return lost handwriting');
+`);
+runNormal(`
+ config={op:'*',example:1};$('start').onclick();
+ const viewport=$('touch-viewport'),paper=$('paper');
+ const factor=Math.min(viewport.clientWidth/paper.width,viewport.clientHeight/paper.height);
+ const event=(x,y)=>({pointerId:1,button:0,clientX:touchViewState.x+x*factor,clientY:touchViewState.y+y*factor,preventDefault(){}});
+ function ink(points){
+  viewport.onpointerdown(event(...points[0]));
+  for(const point of points.slice(1,-1))viewport.onpointermove(event(...point));
+  viewport.onpointerup(event(...points[points.length-1]));
+ }
+ const one=[[36,28],[36,41],[36,54],[36,65]];
+ const zero=[[36,26],[26,29],[21,39],[20,50],[22,62],[29,67],[39,65],[47,56],[50,44],[47,32],[39,26],[36,26]];
+ const atAnswer=points=>points.map(([x,y])=>[x+3*72,y+5*72]);
+ ink(atAnswer(one));flushTimers();
+ $('open-reading').onclick();
+ const fixed=E.given(lesson),expected=E.expected(lesson).main;
+ for(const el of document.querySelectorAll('[data-main]')){
+  const key=el.dataset.main;
+  if(key==='5:3'||fixed.main[key]!==undefined)continue;
+  el.value=key==='4:2'?'8':key==='5:1'?'1':expected[key]||'';el.oninput();
+ }
+ $('reading-close').onclick();$('mark-work').onclick();
+ const marked=(key,style)=>$('grade-issues').innerHTML.includes('class="grade-'+style+'" data-cell="'+key+'"');
+ check(marked('4:2','wrong')&&marked('5:1','wrong')&&marked('5:3','wrong'),'initial multiplication errors not marked');
+ $('erase').onclick();ink(atAnswer([[36,41]]));flushTimers();
+ check(marked('5:3','missing')&&marked('4:2','wrong')&&marked('5:1','wrong'),'erasing one digit removed its mark or another mark');
+ $('pen').onclick();ink(atAnswer(one));flushTimers();
+ check(marked('5:3','wrong'),'writing another wrong digit removed its mark');
+ $('erase').onclick();ink(atAnswer([[36,41]]));flushTimers();
+ $('pen').onclick();ink(atAnswer(zero));flushTimers();
+ check(recognized.main['5:3']==='0'&&!marked('5:3','wrong')&&marked('4:2','wrong')&&marked('5:1','wrong'),'handwriting did not clear only the corrected digit');
+ check([...$('mini-reading').innerHTML.matchAll(/mini-cell-check/g)].length===2,'mini notebook did not match the remaining digit marks');
+ $('undo').onclick();flushTimers();
+ check(marked('5:3','missing'),'undoing the correct stroke did not restore its mark');
+ ink(atAnswer(zero));flushTimers();
+`);
+runNormal(`
+ $('resume').onclick();
+ const marks=()=>$('grade-issues').innerHTML;
+ check(marks().includes('data-cell="4:2"')&&marks().includes('data-cell="5:1"')&&!marks().includes('data-cell="5:3"'),'resuming lost the remaining marks');
+ $('open-reading').onclick();
+ const cells=document.querySelectorAll('[data-main]');
+ function correct(key,value){const input=cells.find(el=>el.dataset.main===key);input.value=value;input.oninput();}
+ correct('4:2','7');
+ check(!marks().includes('data-cell="4:2"')&&marks().includes('data-cell="5:1"'),'editing the reading removed multiple marks');
+ correct('5:1','');$('reading-close').onclick();
+ check(!marks().includes('data-cell="5:1"')&&marks().includes('class="grade-rule" data-row="5"'),'removing an extra digit hid an unrelated line mark');
+ $('clear').onclick();flushTimers();check(!marks(),'clearing the whole notebook left old marks');
+ $('undo').onclick();flushTimers();check(marks().includes('class="grade-rule" data-row="5"'),'undoing clear did not restore the remaining mark');
+ toggleWorkRule(5);updateWritingPaper(true);flushTimers();
+ check(!marks()&&$('grade-circle').hidden&&$('live-grade').innerHTML.includes('もういちど まるつけ'),'the last fix did not clear the line or prematurely showed a correct grade');
+ const count=progress;$('mark-work').onclick();
+ check(result.ok&&!$('grade-circle').hidden&&progress===count+1,'explicit grading after corrections did not award credit');
 `);
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''
