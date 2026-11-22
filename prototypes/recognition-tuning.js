@@ -1,7 +1,7 @@
 /* Small decision rules shared by the notebook and the feedback trainer. */
 (function(root){
 'use strict';
-const baseline='ink6';
+const baseline='ink7';
 let activeRules={};
 
 function baselineDigit(input,choices){

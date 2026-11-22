@@ -15,7 +15,7 @@ if not runtime:
 test = r'''
 const events = {};
 const window = {addEventListener: (key, fn) => events[key] = fn};
-const document = {querySelector: () => ({getAttribute: () => 'digit-reader.js?v=ink6'})};
+const document = {querySelector: () => ({getAttribute: () => 'digit-reader.js?v=ink7'})};
 const values = new Map();
 const localStorage = {
  get length(){return values.size;}, key: i => [...values.keys()][i],
@@ -56,7 +56,7 @@ async function test(){
  check(firstRequest.method==='POST'&&firstRequest.headers['X-Feedback-Client']&&
        !firstRequest.headers.Authorization&&firstRequest.credentials==='omit','default send required a registration or account');
  const first=JSON.parse(firstRequest.body);
- check(first.before==='?'&&first.after==='3'&&first.reader==='ink6'&&first.kind==='main','missing feedback fields');
+ check(first.before==='?'&&first.after==='3'&&first.reader==='ink7'&&first.kind==='main','missing feedback fields');
  check(Object.keys(first).sort().join(',')==='after,before,id,kind,reader,strokes','payload includes unrelated data');
  check(JSON.stringify(first.strokes)==='[[[123,0],[561,351],[737,702]],[[561,702],[0,1000]]]','ink coordinates were not normalized');
  offline=false;
@@ -90,8 +90,8 @@ async function test(){
        'old registration failure lost a pending sample');
 
  const key='hissan-recognition-tuning-v1';
- const v1={schema:1,baseline:'ink6',revision:1,rules:{'93uwl':'9'}};
- const v2={schema:1,baseline:'ink6',revision:2,rules:{}};
+ const v1={schema:1,baseline:'ink7',revision:1,rules:{'93uwl':'9'}};
+ const v2={schema:1,baseline:'ink7',revision:2,rules:{}};
  localStorage.setItem(key,JSON.stringify(v1));
  const getModel=async(url,request)=>{
   check(url.endsWith('/api/recognition-model')&&!request.body&&request.credentials==='omit','model lookup sent notebook data');
@@ -109,7 +109,7 @@ async function test(){
  check(RecognitionTuning.read(input,choices)==='9','model changed under an open notebook');
  openNotebook(localStorage,window,getModel);
  check(RecognitionTuning.read(input,choices)==='?','next notebook kept a withdrawn rule');
- check(!RecognitionTuning.validate({...v1,baseline:'ink5'})&&
+ check(!RecognitionTuning.validate({...v1,baseline:'ink6'})&&
        !RecognitionTuning.validate({...v1,rules:{'93uwl':'6'}}),'incompatible model was accepted');
  (typeof print==='function'?print:console.log)('PASS: default code-free upload, retries, legacy migration, persistent opt-out, and model download');
 }

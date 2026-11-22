@@ -67,6 +67,15 @@ for(const [digit,strokes]of Object.entries(DigitReader.shapes))for(let seed=0;se
 assert(DigitReader.recognize([]).length===0,'blank recognized');
 assert(DigitReader.recognize([[[1,1],[2,2]]]).length===0,'tiny tap recognized');
 const place=(shape,row,col,scaleX=.4,scaleY=.6,top=.32)=>shape.map(s=>s.map(([x,y])=>[(col+.2)*72+x*scaleX,(row+top)*72+y*scaleY]));
+// Tall two-stroke sevens with a long left hook, including reversed pen direction and order.
+for(const form of fixture.heldOutSevens)for(let seed=0;seed<6;seed++){
+ const ink=place(form,3,2,.41+seed*.015,.48-seed*.012);
+ const strokes=seed%2?ink.slice().reverse().map(stroke=>stroke.slice().reverse()):ink;
+ assert(readLive(strokes,8,6).main['3:2']==='7','tall two-stroke 7 was unclear or read as another digit');
+}
+// UCI Pen-Based Recognition of Handwritten Digits, CC BY 4.0 (https://doi.org/10.24432/C5MG6K).
+const sevenLookalike=fixture.sevenLookalikeFour.map(stroke=>stroke.map(([x,y])=>[14+x*.43,16+y*.43]));
+assert(readLive(sevenLookalike,1,1).main['0:0']==='4','slender two-stroke 4 lost a previously correct decision');
 // Approximate the two carries above the printed 268 + 157, including one across a row boundary.
 const addition=Object.assign(buildLesson('+',268,157),{rightAligned:true,compactPaper:true});
 const additionsNotes=[[[187,24],[187,40],[187,56],[187,68]],[[259,52],[255,52],[253,67],[250,80],[243,93]]];

@@ -64,6 +64,12 @@ variants[7].push([
  [[49,12],[54,22],[49,45],[40,70],[27,97]],
  [[28,47],[65,47]]
 ]);
+// Some writers start with a long downstroke at the left of the top bar.
+const tallTwoStrokeSeven=[
+ [[22,6],[21,18],[20,32],[17,43]],
+ [[16,16],[30,13],[49,8],[61,10],[63,16],[61,31],[56,51],[50,69],[43,83],[41,100]]
+];
+variants[7].push(tallTwoStrokeSeven);
 variants[8].push([[[47,49],[35,40],[30,26],[36,14],[48,9],[62,14],[69,27],[63,41],[47,49],[32,60],[24,76],[32,90],[47,96],[67,90],[76,76],[67,62],[47,49]]]);
 variants[9].push([[[73,39],[58,50],[36,48],[22,36],[22,21],[38,10],[58,10],[73,21],[78,42],[72,68],[57,88],[43,94]]]);
 
@@ -217,12 +223,25 @@ const SAMPLE_COUNT=64;
 const POINT_SIZE=4;
 
 function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+function hasTallTopBar(strokes,minY,width,height){
+ if(strokes.length!==2||!width||!height)return false;
+ const top=minY+height*.22,bottom=minY+height*.72;
+ return strokes.some(stroke=>{
+  let left=Infinity,right=-Infinity,reachesBottom=false;
+  for(const [x,y] of stroke){
+   if(y<=top){left=Math.min(left,x);right=Math.max(right,x);}
+   if(y>=bottom)reachesBottom=true;
+  }
+  return reachesBottom&&right-left>=width*.55;
+ });
+}
 function normalize(strokes){
- const segments=[];
+ const segments=[],inkStrokes=[];
  let total=0,minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
  for(const stroke of strokes){
   // A tap does not belong to a digit's outline.
   if(stroke.length<2)continue;
+  const previous=segments.length;
   for(let i=1;i<stroke.length;i++){
    const a=stroke[i-1],b=stroke[i],len=dist(a,b);
    if(!len)continue;
@@ -231,6 +250,7 @@ function normalize(strokes){
    segments.push({a,b,start:total,len});
    total+=len;
   }
+  if(segments.length>previous)inkStrokes.push(stroke);
  }
  const w=maxX-minX,h=maxY-minY,scale=Math.max(w,h);
  if(!total||scale<8||total/scale>12)return null;
@@ -250,7 +270,7 @@ function normalize(strokes){
   cloud[offset+2]=dx/directionLength;
   cloud[offset+3]=dy/directionLength;
  }
- return {cloud,ratio:w/Math.max(h,1),length:total/scale};
+ return {cloud,ratio:w/Math.max(h,1),length:total/scale,tallTopBar:hasTallTopBar(inkStrokes,minY,w,h)};
 }
 function cloudDistance(a,b){
  let sum=0;
@@ -272,7 +292,7 @@ for(const [digit,strokes] of Object.entries(shapes)){
  for(const form of [strokes,...variants[digit]]){
   for(const slant of [-.13,0,.13]){
    const tilted=form.map(stroke=>stroke.map(([x,y])=>[x+slant*(y-50),y]));
-   templates.push({digit,...normalize(tilted)});
+   templates.push({digit,...normalize(tilted),requiresTallTopBar:form===tallTwoStrokeSeven});
   }
  }
 }
@@ -285,7 +305,12 @@ function compare(input,template){
  return shape+ratio*.07+Math.abs(input.length-template.length)*.015;
 }
 function rank(input){if(!input)return [];
- const scores=new Map();for(const t of templates){const score=compare(input,t);scores.set(t.digit,Math.min(scores.get(t.digit)??Infinity,score));}
+ const scores=new Map();
+ for(const t of templates){
+  if(t.requiresTallTopBar&&!input.tallTopBar)continue;
+  const score=compare(input,t);
+  scores.set(t.digit,Math.min(scores.get(t.digit)??Infinity,score));
+ }
  return [...scores].map(([digit,distance])=>({digit,distance})).sort((a,b)=>a.distance-b.distance).slice(0,3);
 }
 function recognize(strokes){return rank(normalize(strokes));}
