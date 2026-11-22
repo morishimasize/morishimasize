@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check the feedback queue, consent, payload minimization, and retry behavior."""
 from pathlib import Path
+import json
 import shutil
 import subprocess
 import tempfile
@@ -68,13 +69,36 @@ async function test(){
  check(requests.at(-1).request.method==='DELETE','disabling did not ask to revoke the device token');
  await events.pageshow();
  check(requests.at(-1).request.method==='DELETE','disabled device retried an old report');
- (typeof print==='function'?print:console.log)('PASS: feedback registration, minimal payload, automatic upload, retry, and opt-out');
+
+ const key='hissan-recognition-tuning-v1';
+ const v1={schema:1,baseline:'ink6',revision:1,rules:{'93uwl':'9'}};
+ const v2={schema:1,baseline:'ink6',revision:2,rules:{}};
+ localStorage.setItem(key,JSON.stringify(v1));
+ const getModel=async(url,request)=>{
+  check(url.endsWith('/api/recognition-model')&&!request.body&&request.credentials==='omit','model lookup sent notebook data');
+  return {ok:true,json:async()=>v2};
+ };
+ const openNotebook=new Function('localStorage','window','fetch',tuningSource+'\n'+feedbackSource);
+ openNotebook(localStorage,window,getModel);
+ const input={ratio:.82,length:2.5};
+ const choices=[{digit:'9',distance:.08},{digit:'3',distance:.087}];
+ check(RecognitionTuning.read(input,choices)==='9','cached rule was not used at startup');
+ await tick();
+ check(JSON.parse(localStorage.getItem(key)).revision===2,'new model did not reach the cache');
+ check(RecognitionTuning.read(input,choices)==='9','model changed under an open notebook');
+ openNotebook(localStorage,window,getModel);
+ check(RecognitionTuning.read(input,choices)==='?','next notebook kept a withdrawn rule');
+ check(!RecognitionTuning.validate({...v1,baseline:'ink5'})&&
+       !RecognitionTuning.validate({...v1,rules:{'93uwl':'6'}}),'incompatible model was accepted');
+ (typeof print==='function'?print:console.log)('PASS: feedback queue, automatic upload, retry, opt-out, and versioned model download');
 }
 '''
 
 source = (root / 'prototypes/notebook-feedback.js').read_text()
+tuning = (root / 'prototypes/recognition-tuning.js').read_text()
 handle_error = 'error => { print(error); quit(1); }' if runtime == str(jsc) else 'error => { console.error(error); process.exitCode=1; }'
 with tempfile.TemporaryDirectory(prefix='hissan-feedback-') as directory:
     path = Path(directory) / 'test.js'
-    path.write_text(test + '\n' + source + '\ntest().catch(' + handle_error + ');\n')
+    path.write_text('const tuningSource=' + json.dumps(tuning) + ';\nconst feedbackSource=' + json.dumps(source) + ';\n'
+                    + test + '\n' + source + '\ntest().catch(' + handle_error + ');\n')
     subprocess.run([runtime, str(path)], check=True, cwd=root)

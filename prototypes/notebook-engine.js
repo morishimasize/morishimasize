@@ -9,7 +9,9 @@ const symbolTemplates=Object.entries(symbols).map(([text,strokes])=>({text,...Di
 function readGlyph(strokes,digitsOnly=false){
  const input=DigitReader.normalize(strokes);
  if(!input)return '?';
- const candidates=DigitReader.rank(input).map(d=>({text:d.digit,score:d.distance}));
+ const choices=DigitReader.rank(input);
+ if(digitsOnly&&root.RecognitionTuning)return root.RecognitionTuning.read(input,choices);
+ const candidates=choices.map(d=>({text:d.digit,score:d.distance}));
  if(!digitsOnly)for(const s of symbolTemplates)candidates.push({text:s.text,score:DigitReader.compare(input,s)});
  candidates.sort((a,b)=>a.score-b.score);
  const [best,second]=candidates;

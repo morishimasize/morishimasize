@@ -11,7 +11,7 @@ jsc = Path('/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpe
 runtime = shutil.which('node') or (str(jsc) if jsc.exists() else None)
 if not runtime:
     raise SystemExit('Node.js または macOS JavaScriptCore が必要です。')
-source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/notebook-engine.js'])
+source = '\n'.join((root / name).read_text() for name in ['steps.js','prototypes/digit-reader.js','prototypes/recognition-tuning.js','prototypes/notebook-engine.js'])
 fixtures = json.loads((root / 'tests/handwriting-fixtures.json').read_text())
 tests = r'''
 const log=typeof print==='function'?print:console.log;

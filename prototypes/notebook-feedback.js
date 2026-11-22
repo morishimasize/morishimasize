@@ -4,6 +4,7 @@
 const site='https://hissan-note-feedback.artfulcookie1.chatgpt.site';
 const tokenKey='hissan-feedback-device-v1';
 const pendingPrefix='hissan-feedback-pending-v1:';
+const modelKey='hissan-recognition-tuning-v1';
 const tokenPattern=/^[a-f0-9]{64}$/;
 let active=null,retryTimer,delay=1000;
 
@@ -111,10 +112,25 @@ function enqueue(kind,before,after,strokes){
  if(put(pendingPrefix+id,JSON.stringify({id,before,after,reader,kind,strokes:ink})))void flush();
 }
 
+function loadRecognitionRules(){
+ const tuning=root.RecognitionTuning;
+ if(!tuning)return;
+ const cached=()=>{try{return tuning.validate(JSON.parse(get(modelKey)));}catch{return null;}};
+ tuning.install(cached());
+ // Keep a notebook's decisions consistent while it is open. The next page load uses the update.
+ fetch(site+'/api/recognition-model',{
+  credentials:'omit',referrerPolicy:'no-referrer',cache:'no-cache'
+ }).then(response=>response.ok?response.json():null).then(value=>{
+  const model=tuning.validate(value);
+  if(model&&model.revision>=(cached()?.revision??0))put(modelKey,JSON.stringify(model));
+ }).catch(()=>{});
+}
+
 window.addEventListener('online',flush);
 window.addEventListener('pageshow',flush);
 window.addEventListener('storage',event=>{
  if(event.key===tokenKey||event.key===null)active?.abort();
 });
 root.NotebookFeedback={site,enabled:()=>Boolean(device()),enable,disable,enqueue,pending:()=>pending().length,flush};
+loadRecognitionRules();
 })(globalThis);
