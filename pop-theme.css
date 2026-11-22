@@ -19,9 +19,9 @@ body.answer-mode::before{height:8px;background-size:16px 16px;border-bottom-widt
 .sticker-bow{right:24px;top:3px;font-size:78px;transform:rotate(12deg);}
 .sticker-pencil{position:absolute;right:12px;top:146px;width:110px;height:165px;object-fit:contain;pointer-events:none;user-select:none;z-index:2;}
 .notebook{border:6px solid #FFDA3B;outline:3px solid #FFF;border-radius:32px;background-color:#FFF;background-image:linear-gradient(#C4E9F566 1px,transparent 1px),linear-gradient(90deg,#C4E9F566 1px,transparent 1px);background-size:24px 24px;box-shadow:inset 0 0 0 2px #FFF,0 7px 0 #EDAF36,0 13px 0 #ECA0BF66,0 18px 28px #CD568B18;}
-.notebook::before{left:-16px;top:34px;bottom:28px;width:36px;background:radial-gradient(ellipse at 50% 50%,#FFACD4 0 24%,#FF60AB 29% 44%,#E9358C 47% 51%,#FFF 54% 62%,transparent 66%) 0 0/36px 84px repeat-y;filter:drop-shadow(0 3px 1px #CB3E7840);}
+.notebook::before{content:none;}
 .notebook::after{left:26px;top:-15px;width:72px;height:25px;border:2px solid #FFF;border-radius:7px;background:radial-gradient(#FFF 1.5px,transparent 2px) 0 0/12px 12px,linear-gradient(#FFA1CB,#F667A9);box-shadow:0 3px 0 #EB83B1;}
-.card.notebook{padding-left:52px;padding-right:36px;}
+.card.notebook{padding-left:36px;padding-right:36px;}
 .number-field label{font-weight:900;}
 .num-box{border:4px solid #F763A6;border-radius:25px;background:linear-gradient(#FFF 0 74%,#FFF1F7);box-shadow:inset 0 3px 0 #FFF,0 5px 0 #DA4D8F,0 8px 0 #FFC8DF;}
 .num-box.active{background:linear-gradient(#FFFED4,#FFF7A1);border-color:#EDBD08;box-shadow:inset 0 3px 0 #FFF9CD,0 5px 0 #D6A800,0 8px 0 #FFE884;}
@@ -60,7 +60,7 @@ button:focus-visible,.lesson-board-viewport:focus-visible{outline:4px solid #236
 @media(max-width:1049px){.sticker-bow{display:none;}.sticker-pencil{top:-10px;right:6px;width:62px;height:94px;}.sticker-strawberry{left:12px;font-size:58px;}}
 @media(max-width:700px){
  body{padding-top:max(36px,env(safe-area-inset-top));}.brand{padding:0 40px;margin:8px auto 20px;}.brand h1{font-size:27px;padding:7px 12px;margin-bottom:12px;border-width:2px;outline-width:4px;}.brand p{font-size:17px;}.sticker-strawberry{left:-1px;top:4px;font-size:37px;}.sticker-pencil{right:-2px;top:-5px;width:43px;height:66px;}
- .notebook{border-width:5px;border-radius:28px;}.card.notebook{padding:24px 14px 25px 29px;}.notebook::before{left:-7px;top:30px;bottom:20px;width:22px;background-size:22px 68px;}.notebook::after{left:22px;width:58px;height:21px;top:-13px;}.number-field label{font-size:13px;}.op-btn{width:56px;height:56px;}.op-group{gap:12px;}.key{border-radius:16px;}.calc-btn{font-size:23px;}.answer-book{padding:24px 14px 22px 26px;}.lesson-explanation{border-radius:23px;}.lesson-heading h2{font-size:22px;}.lesson-controls{padding:9px;gap:7px;}.lesson-controls button{font-size:20px;min-height:58px;}#lesson-count{font-size:14px;padding:7px 6px;}.lesson-math{padding:9px 7px;}
+ .notebook{border-width:5px;border-radius:28px;}.card.notebook{padding:24px 14px 25px;}.notebook::after{left:22px;width:58px;height:21px;top:-13px;}.number-field label{font-size:13px;}.op-btn{width:56px;height:56px;}.op-group{gap:12px;}.key{border-radius:16px;}.calc-btn{font-size:23px;}.answer-book{padding:24px 14px 22px;}.lesson-explanation{border-radius:23px;}.lesson-heading h2{font-size:22px;}.lesson-controls{padding:9px;gap:7px;}.lesson-controls button{font-size:20px;min-height:58px;}#lesson-count{font-size:14px;padding:7px 6px;}.lesson-math{padding:9px 7px;}
 }
 @media(prefers-reduced-motion:reduce){button{transition:none;}}
 /* 解答のマスを避け、ノートの外縁だけに鉛筆シールを添える。 */
@@ -115,7 +115,7 @@ body:not(.answer-mode) {
   .brand .home-link { font-size:13px; padding-inline:7px; }
   .brand .mode-heading { font-size:clamp(18px,5.5vw,27px); padding:6px 8px; }
   .brand .input-subtitle, .brand .sticker-pencil { display:none; }
-  #input-card { padding:14px 12px 15px 18px; gap:11px; }
+  #input-card { padding:14px 12px 15px; gap:11px; }
   #input-card .formula-bar { gap:5px; }
   #input-card .number-field label { margin-bottom:3px; }
   #input-card .num-box { height:clamp(48px,10svh,76px); font-size:clamp(23px,6vw,38px); padding:0; }
@@ -167,7 +167,7 @@ body.answer-mode .hdr { min-width:0; display:grid; place-items:center; overflow-
 body.answer-mode .answer-book {
   display:grid;
   grid-template-rows:minmax(0,1fr) auto auto;
-  padding:12px 12px 8px 22px;
+  padding:12px 12px 8px;
 }
 body.answer-mode .answer-book::after { display:none; }
 .answer-layout { min-height:0; align-items:stretch; gap:8px; }
