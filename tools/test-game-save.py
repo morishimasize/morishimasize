@@ -33,7 +33,7 @@ const log=typeof print==='function'?print:console.log;
 let assertions=0;function check(v,m){assertions++;if(!v)throw Error(m);}
 let failWrite=false;const values=new Map([['hissan-full-notebook-v1','5']]);
 const storage={getItem(k){return values.has(k)?values.get(k):null;},setItem(k,v){if(failWrite)throw Error('quota');values.set(k,v);}};
-function run(code){new Function('storage','check',HARNESS+SOURCE+'\n'+code)(storage,check);}
+function run(code){new Function('storage','check',HARNESS+SOURCE+'\nif(phase==="setup")config.example=0;\n'+code)(storage,check);}
 run(`
  check(progress===5,'legacy progress not migrated');
  check(phase==='setup','initial setup');
@@ -218,7 +218,7 @@ new Function('storage','check',easyHarness+SOURCE+`
 
 // Use the normal game URL with no opt-in parameter; exercise saves across reloads.
 const normalHarness=HARNESS.replace("const testQuery={touch:'0'};",'const testQuery={};');
-function runNormal(code){new Function('storage','check',normalHarness+SOURCE+'\n'+code)(storage,check);}
+function runNormal(code){new Function('storage','check',normalHarness+SOURCE+'\nif(phase==="setup")config.example=0;\n'+code)(storage,check);}
 values.set('hissan-full-notebook-v2',previous);
 runNormal(`
  const oldInk=JSON.stringify(savedGame.strokes);
@@ -342,6 +342,43 @@ runNormal(`
  check(result?.ok&&credited&&progress===count+1&&!$('grade-circle').hidden,'a previously marked game rejected or missed credit after the fix');
  $('mark-work').onclick();check(progress===count+1,'the migrated game earned duplicate credit');
 `);
+
+// Random mode is the default; validate real generated lessons, saves and old records.
+const randomStorage={getItem(k){return this.values.get(k)??null;},setItem(k,v){this.values.set(k,v);},values:new Map()};
+function runRandom(code){new Function('storage','check',HARNESS+SOURCE+'\n'+code)(randomStorage,check);}
+runRandom(`
+ check(config.example===-1,'random mode not default');
+ for(const op of Object.keys(OPS)){
+  let previous=null;const distinct=new Set();let remainders=new Set();
+  for(let i=0;i<200;i++){
+   const [a,b]=randomProblem(op,previous),model=Object.assign(buildLesson(op,a,b),{rightAligned:true,compactPaper:true});
+   check(!previous||a!==previous.a||b!==previous.b,'consecutive problem repeated');
+   check(op==='+'?a>=10&&a<=499&&b>=10&&b<=499:op==='-'?a>=21&&a<=999&&b>=10&&b<a:op==='*'?a>=12&&a<=49&&b>=2&&b<=29:b>=2&&b<=9&&Math.floor(a/b)>=11&&Math.floor(a/b)<=99,'problem outside child-sized range');
+   check(E.gradeWork(model,E.expected(model),E.rows(model)).ok,'generated problem cannot be graded');
+   distinct.add(a+':'+b);if(op==='/')remainders.add(a%b===0);
+   previous={op,a,b};
+  }
+  check(distinct.size>100,'random variety too small');
+  if(op==='/')check(remainders.size===2,'division lacks exact or remainder problems');
+  const originalRandom=Math.random;Math.random=()=>0;
+  try{const [a,b]=randomProblem(op);const next=randomProblem(op,{op,a,b});check(next[0]!==a||next[1]!==b,'constant random source repeats');}finally{Math.random=originalRandom;}
+ }
+ $('start').onclick();
+ check(savedGame.config.example===-1&&savedGame.config.a===lesson.a&&savedGame.config.b===lesson.b,'random equation not saved');
+ recognized=E.expected(lesson);result=E.gradeWork(lesson,recognized,rowCount());credited=true;progress=1;save();
+`);
+runRandom(`
+ const prior=JSON.stringify(savedGame.config);$('resume').onclick();
+ check(JSON.stringify(savedGame.config)===prior&&result.ok&&progress===1,'random resume changed equation or credit');
+ const a=lesson.a,b=lesson.b;$('back').onclick();$('start').onclick();
+ check(a!==lesson.a||b!==lesson.b,'new game repeated after reload');
+ const old=JSON.parse(JSON.stringify(savedGame));old.config={op:'+',example:0};old.graded=false;old.recognized=null;old.credited=false;
+ NotebookSave.write(storage,progress,old);
+ for(const config of [{op:'/',example:-1,a:10,b:0},{op:'-',example:-1,a:1,b:2},{op:'+',example:-1},{op:'+',example:-1,a:NaN,b:2}]){
+  check(!NotebookSave.validSession({...old,config}),'invalid equation accepted');
+ }
+`);
+runRandom(`$('resume').onclick();check(lesson.a===27&&lesson.b===15,'legacy fixed notebook changed');`);
 log('PASS: '+assertions+' game persistence/controller checks, including reloads, ink, review edits, auto credit, duplicate prevention, migration and failures.');
 '''
 script = 'const SOURCE='+json.dumps(source)+';\nconst HARNESS='+json.dumps(harness)+';\n'+tests

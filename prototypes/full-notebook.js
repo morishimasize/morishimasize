@@ -5,19 +5,44 @@ const SAMPLES={'+':[[27,15],[46,28],[268,157]],'-':[[52,28],[302,178],[73,46]],'
 const params=new URLSearchParams(window.location.search),calculatorMode=params.get('mode')==='calculator',fingerNotebook=params.get('touch')!=='0';
 let storageOK=true,progress=0,savedGame=null;
 if(!calculatorMode)try{const saved=NotebookSave.read(localStorage);progress=saved.progress;savedGame=saved.session;}catch{storageOK=false;}
-let config={op:'+',example:0},lesson=null,strokes=[],recognized=null,result=null,phase='setup',guide=false,tool='pen',reviewTool='number',credited=false,version=0,history=[];
+let config={op:'+',example:-1},lesson=null,strokes=[],recognized=null,result=null,phase='setup',guide=false,tool='pen',reviewTool='number',credited=false,version=0,history=[];
+// Keep the old examples for practice and for notebooks saved before random problems.
+function problemOperands(config){
+ return Number.isInteger(config.a)?[config.a,config.b]:SAMPLES[config.op][config.example];
+}
+function previousProblem(){
+ if(lesson)return lesson;
+ if(!savedGame)return null;
+ const [a,b]=problemOperands(savedGame.config);
+ return {op:savedGame.config.op,a,b};
+}
+function randomProblem(op,previous){
+ const integer=(min,max)=>min+Math.floor(Math.random()*(max-min+1));
+ let a,b;
+ if(op==='+'){a=integer(10,499);b=integer(10,499);}
+ else if(op==='-'){a=integer(21,999);b=integer(10,a-1);}
+ else if(op==='*'){a=integer(12,49);b=integer(2,29);}
+ else{b=integer(2,9);a=b*integer(11,99)+integer(0,b-1);}
+ // A bounded adjustment also works when the random source repeats itself.
+ if(previous&&previous.op===op&&previous.a===a&&previous.b===b){
+  if(op==='-')b=b===10?11:b-1;
+  else if(op==='/')a=a%b===b-1?a-1:a+1;
+  else b=b===(op==='*'?29:499)?b-1:b+1;
+ }
+ return [a,b];
+}
 function picture(count){const stage=Math.min(4,Math.floor(count/3));return `<div class="progress-picture"><img class="reward-image" src="../assets/reward-island.jpg" alt="ふしぎな しまの ピクニック">${[0,1,2,3].map(i=>`<div class="mask" ${i<stage?'hidden':''}>？</div>`).join('')}</div>`;}
 function status(s){$('notice').textContent=s;}
 function save(){
  if(calculatorMode)return;
- if(lesson&&['write','review','reward'].includes(phase))savedGame={version:1,config:{op:lesson.op,example:SAMPLES[lesson.op].findIndex(([a,b])=>a===lesson.a&&b===lesson.b)},phase,rightAligned:lesson.rightAligned,compactPaper:lesson.compactPaper,strokes,rules:extraLines,editRow,recognized,readingCorrections:fingerNotebook?readingCorrections:undefined,issueTargets:fingerNotebook?liveIssueTargets:undefined,graded:result!==null,credited,guide,tool,reviewTool};
+ if(lesson&&['write','review','reward'].includes(phase))savedGame={version:1,config:{op:lesson.op,example:config.example,a:lesson.a,b:lesson.b},phase,rightAligned:lesson.rightAligned,compactPaper:lesson.compactPaper,strokes,rules:extraLines,editRow,recognized,readingCorrections:fingerNotebook?readingCorrections:undefined,issueTargets:fingerNotebook?liveIssueTargets:undefined,graded:result!==null,credited,guide,tool,reviewTool};
  try{NotebookSave.write(localStorage,progress,savedGame);storageOK=true;}catch{storageOK=false;}
  const message=$('save-status');if(message){message.classList.toggle('save-failed',!storageOK);message.textContent=storageOK?(savedGame?'ここまで ほぞんしたよ。あとで つづきから あそべるよ。':'えの すすみぐあいは、じどうで ほぞんするよ。'):'つづきを ほぞんできなかったよ。この ページを とじると きえてしまうよ。';}
 }
 function resumeGame(){
  if(!savedGame)return;
  Object.assign(touchViewState,{scale:1,x:0,y:0});
- const game=savedGame;config={...game.config};const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=game.rightAligned===true;lesson.compactPaper=game.compactPaper===true;
+ const game=savedGame;config={...game.config};const [a,b]=problemOperands(config);lesson=buildLesson(config.op,a,b);lesson.rightAligned=game.rightAligned===true;lesson.compactPaper=game.compactPaper===true;
  strokes=game.strokes;extraLines=game.rules||[];editRow=Math.min(rowCount()-1,Math.max(0,game.editRow??(lesson.op==='/'?1:3)));recognized=game.recognized;credited=game.credited;guide=!!game.guide;tool=game.tool==='erase'?'erase':'pen';reviewTool=['number','note','line','bracket'].includes(game.reviewTool)?game.reviewTool:'number';history=[];
  if(fingerNotebook)resumeLiveReading(game);
  result=null;
@@ -31,8 +56,8 @@ function resumeGame(){
  refresh();
 }
 function refresh(focus=true){version++;drawing=false;clearTimeout(inkFeedbackTimer);document.body.classList.toggle('notebook-writing',fingerNotebook&&phase==='write');document.body.classList.toggle('notebook-review',phase==='review');$('notice').textContent='';if(phase==='setup')setup();else if(phase==='write')writing();else if(phase==='review')review();else finished();if(focus){window.scrollTo(0,0);$('app').setAttribute('tabindex','-1');$('app').focus({preventScroll:true});}document.querySelectorAll('[data-paper-direction]').forEach(button=>button.onclick=()=>{const paper=button.closest('.paper-area').querySelector('.paper-scroll');paper.scrollBy({left:Number(button.dataset.paperDirection)*paper.clientWidth*.7,behavior:'smooth'});});if(!calculatorMode){$('app').insertAdjacentHTML('beforeend','<p id="save-status" class="save-status" role="status"></p>');save();}}
-function setup(){$('app').innerHTML=`<section class="card game-setup">${savedGame?'<div class="resume-card"><p>まえの つづきが あるよ</p><button class="primary" id="resume">つづきから あそぶ →</button></div>':''}<h1>けいさんゲーム</h1><p class="sub">ノートの しきの つづきに、とちゅうの けいさんと こたえを かいてね。</p><div class="op-tabs">${Object.entries(OPS).map(([op,v])=>`<button data-op="${op}" aria-pressed="${op===config.op}"><b>${v[0]}</b><span>${v[1]}</span></button>`).join('')}</div><div class="example-row"><label for="sample">もんだい</label><select id="sample">${SAMPLES[config.op].map(([x,y],i)=>`<option value="${i}" ${i===config.example?'selected':''}>${x} ${OPS[config.op][0]} ${y}</option>`).join('')}</select></div><button class="primary start" id="start">ノートに かく →</button><div class="bottom-nav"><button id="book">📖 できたえほん（${Math.min(progress,12)} / 12もん）</button></div></section>`;
-document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{config={op:b.dataset.op,example:0};refresh(false);});$('sample').onchange=()=>config.example=Number($('sample').value);if($('resume'))$('resume').onclick=resumeGame;$('start').onclick=()=>{Object.assign(touchViewState,{scale:1,x:0,y:0});const [a,b]=SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=fingerNotebook;lesson.compactPaper=fingerNotebook;strokes=[];extraLines=[];editRow=lesson.op==='/'?1:3;rowEditorOpen=false;history=[];readingCorrections=emptyReadingCorrections();liveIssueTargets=[];recognized=null;result=null;credited=false;guide=false;tool='pen';phase='write';refresh();};$('book').onclick=()=>{phase='book';refresh();};}
+function setup(){$('app').innerHTML=`<section class="card game-setup">${savedGame?'<div class="resume-card"><p>まえの つづきが あるよ</p><button class="primary" id="resume">つづきから あそぶ →</button></div>':''}<h1>けいさんゲーム</h1><p class="sub">ノートの しきの つづきに、とちゅうの けいさんと こたえを かいてね。</p><div class="op-tabs">${Object.entries(OPS).map(([op,v])=>`<button data-op="${op}" aria-pressed="${op===config.op}"><b>${v[0]}</b><span>${v[1]}</span></button>`).join('')}</div><div class="example-row"><label for="sample">もんだい</label><select id="sample"><option value="-1" ${config.example===-1?'selected':''}>おまかせ（まいかい かわる）</option>${SAMPLES[config.op].map(([x,y],i)=>`<option value="${i}" ${i===config.example?'selected':''}>${x} ${OPS[config.op][0]} ${y}</option>`).join('')}</select></div><button class="primary start" id="start">ノートに かく →</button><div class="bottom-nav"><button id="book">📖 できたえほん（${Math.min(progress,12)} / 12もん）</button></div></section>`;
+document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{config={op:b.dataset.op,example:-1};refresh(false);});$('sample').onchange=()=>config.example=Number($('sample').value);if($('resume'))$('resume').onclick=resumeGame;$('start').onclick=()=>{Object.assign(touchViewState,{scale:1,x:0,y:0});const previous=previousProblem();const [a,b]=config.example===-1?randomProblem(config.op,previous):SAMPLES[config.op][config.example];lesson=buildLesson(config.op,a,b);lesson.rightAligned=fingerNotebook;lesson.compactPaper=fingerNotebook;strokes=[];extraLines=[];editRow=lesson.op==='/'?1:3;rowEditorOpen=false;history=[];readingCorrections=emptyReadingCorrections();liveIssueTargets=[];recognized=null;result=null;credited=false;guide=false;tool='pen';phase='write';refresh();};$('book').onclick=()=>{phase='book';refresh();};}
 function returnToCalculator(){window.location.href='../calculator.html?'+new URLSearchParams({mode:'practice',op:lesson?.op||'+',a:String(lesson?.a??0),b:String(lesson?.b??0)});}
 function columnCount(){return E.columns(lesson);}
 function rowCount(){return E.rows(lesson);}
