@@ -38,6 +38,24 @@ for(const [digit,strokes] of threeCases)for(let seed=0;seed<8;seed++){
  const read=readLive(written,8,6);
  assert(read.main['3:2']===digit,'live notebook '+digit+' variation '+seed+' read as '+read.main['3:2']);
 }
+// Real pen strokes from a separate validation split, written large and as small notes.
+for(const [digit,forms] of Object.entries(fixture.penDigits))for(const strokes of forms)for(const field of ['main','notes']){
+ const small=field==='notes';
+ for(let seed=0;seed<4;seed++){
+  const scaleX=small?.16+seed*.007:.42+seed*.022;
+  const scaleY=small?.17+seed*.005:.46-seed*.02;
+  const slant=(seed-1.5)*(small?.004:.01);
+  const wobble=small?.2:.5;
+  const top=small?217:233;
+  const ink=strokes.map(stroke=>stroke.map(([x,y],i)=>[
+   158+x*scaleX+(y-50)*slant+Math.sin(i+seed)*wobble,
+   top+y*scaleY+Math.cos(i+seed)*wobble
+  ]));
+  const written=seed%2?ink.slice().reverse().map(stroke=>stroke.slice().reverse()):ink;
+  const actual=readLive(written,8,6)[field]['3:2'];
+  assert(actual===digit,'pen digit '+digit+' '+field+' variation '+seed+' read as '+actual);
+ }
+}
 for(const [digit,shapes]of [['5',fixture.heldOutFives],['9',fixture.heldOutNines]])for(const strokes of shapes)for(let seed=0;seed<8;seed++){
  const ink=strokes.map(s=>s.map(([x,y],i)=>[x*(.75+seed*.08)+12+Math.sin(i+seed)*.5,y*(1.1-seed*.04)+18+Math.cos(i+seed)*.5]));
  assert(DigitReader.recognize(ink)[0]?.digit===digit,'unseen '+digit+' variation '+seed);
@@ -95,7 +113,7 @@ for(const [op,pairs]of Object.entries({'+':[[27,15],[46,28],[268,157]],'-':[[52,
  for(const b of e.brackets)ink.push([[b.col*72-12,b.row*72+7],[b.col*72-1,b.row*72+20],[b.col*72+1,b.row*72+36],[b.col*72-2,b.row*72+52],[b.col*72-12,b.row*72+65]]);
  assert(E.grade(model,E.read(ink,rows,E.columns(model)),rows).ok,'complete handwritten worksheet regression '+op+a);
 }
-log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired worksheet glyphs, live 3/5/8 variations, held-out 5/9 shapes, existing 0–9, grouping, unclear glyphs, rules and notes.');
+log('PASS: '+checks+' recognition checks; '+photoGlyphs+' photo-inspired worksheet glyphs, pen-written 0–9 in main cells and notes, unclear glyphs, rules and existing variants.');
 '''
 script = source + '\nconst fixture=' + json.dumps(fixtures) + ';\n' + tests
 with tempfile.TemporaryDirectory(prefix='hissan-recognition-') as directory:
